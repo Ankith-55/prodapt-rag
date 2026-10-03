@@ -49,6 +49,7 @@ class Hit:
     total_cases: int
     top1_share: float
     median_close_hours: float
+    p90_close_hours: float = 0.0
     resolutions: list[dict] = field(default_factory=list)  # [{resolution_id, share, count, text}]
 
 
@@ -56,18 +57,27 @@ class PatternRetriever:
     def __init__(self, index_dir: str | Path = "data/processed/index",
                  processed_dir: str | Path = "data/processed", embedder: Embedder | None = None,
                  support_weight: float = 0.0, min_cases: int = 0):
-        self.store = VectorStore.load(index_dir)
-        model_name = self.store.meta["model_name"]
+        self.index_dir, self.processed_dir = Path(index_dir), Path(processed_dir)
+        self.support_weight, self.min_cases = support_weight, min_cases
+        store, patterns, resolution_text = self._load()
+        model_name = store.meta["model_name"]
         if embedder is not None and embedder.model_name != model_name:
             raise ValueError(f"index built with {model_name}, embedder is {embedder.model_name}")
         self.embedder = embedder or Embedder(model_name)
-        self.support_weight, self.min_cases = support_weight, min_cases
-        p = Path(processed_dir)
-        patterns = pd.read_parquet(p / "patterns.parquet")
-        self.patterns = {int_id: row for int_id, row in
-                         zip(patterns["pattern_id"].map(pid_to_int), patterns.to_dict("records"))}
-        res = pd.read_parquet(p / "resolutions.parquet")
-        self.resolution_text = dict(zip(res["resolution_id"], res["resolution_description"]))
+        self.store, self.patterns, self.resolution_text = store, patterns, resolution_text
+
+    def _load(self):
+        store = VectorStore.load(self.index_dir)
+        patterns = pd.read_parquet(self.processed_dir / "patterns.parquet")
+        patterns = {int_id: row for int_id, row in
+                    zip(patterns["pattern_id"].map(pid_to_int), patterns.to_dict("records"))}
+        res = pd.read_parquet(self.processed_dir / "resolutions.parquet")
+        return store, patterns, dict(zip(res["resolution_id"], res["resolution_description"]))
+
+    def reload(self) -> None:
+        """Pick up an ingested batch without restarting. New objects are built first, then swapped in,
+        so a concurrent search sees either the old or the new state, never a mix."""
+        self.store, self.patterns, self.resolution_text = self._load()
 
     def rank(self, qvecs: np.ndarray, k: int = 5, support_weight: float | None = None,
              min_cases: int | None = None) -> list[list[tuple[int, float]]]:
@@ -94,7 +104,7 @@ class PatternRetriever:
                for d in list(r["resolution_dist"])[:top_resolutions]]
         return Hit(r["pattern_id"], score, r["complaint_type"], r["descriptor"], r["descriptor_2"],
                    r["tier"], int(r["total_cases"]), float(r["top1_share"]),
-                   float(r["median_close_hours"]), res)
+                   float(r["median_close_hours"]), float(r["p90_close_hours"]), res)
 
     def search(self, query: str, k: int = 5, top_resolutions: int = 3) -> list[Hit]:
         qv = self.embedder.encode_queries([query])

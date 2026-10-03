@@ -1,0 +1,40 @@
+{
+  "tag": "parse_small_top5",
+  "model": "gpt-4o-mini",
+  "n": 1000,
+  "k": 5,
+  "gate": 0.74,
+  "ceiling_gold_in_topk": 0.733,
+  "retrieval_top1_category": 0.757,
+  "retrieval_top1_pattern": 0.428,
+  "llm_category": 0.831,
+  "llm_pattern": 0.572,
+  "llm_pick_gold_given_in_topk": 0.7803547066848567,
+  "in_domain_answered_both_gates": 0.965,
+  "in_domain_llm_none": 0.012,
+  "ood_n": 25,
+  "ood_reject_cosine": 0.76,
+  "ood_reject_llm": 0.28,
+  "ood_reject_either": 0.76,
+  "severity_dist": {
+    "2": 98,
+    "3": 451,
+    "4": 441,
+    "5": 10
+  },
+  "sentiment_dist": {
+    "frustrated": 839,
+    "angry": 44,
+    "anxious": 117
+  },
+  "confidence_dist": {
+    "high": 991,
+    "medium": 9
+  },
+  "usage": {
+    "calls": 1025,
+    "cache_hits": 0,
+    "prompt_tokens": 598917,
+    "completion_tokens": 37008
+  }
+}

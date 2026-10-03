@@ -21,9 +21,10 @@ Caveat: synthetic queries, one generator model, 25 OOD queries. Use for *relativ
 
 | Run | Embedder | Index docs | Vectors | R@1 | R@5 | R@10 | Category@1 | Res. TV@1 ↓ | Res. cov@3 | Abstain AUROC |
 |---|---|---|---|---|---|---|---|---|---|---|
-| labels_only | bge-small-en-v1.5 | label only | 1266 | 39.8% | 65.8% | 74.4% | 67.6% | 0.395 | 80.8% | 0.920 |
 | small_examples | bge-small-en-v1.5 | label + synthetic example complaints | 6330 | 43.5% | 73.2% | 82.9% | 76.0% | 0.346 | 86.8% | 0.938 |
+| labels_only | bge-small-en-v1.5 | label only | 1266 | 39.8% | 65.8% | 74.4% | 67.6% | 0.395 | 80.8% | 0.920 |
 | m3_examples | bge-m3 | label + synthetic example complaints | 6330 | 42.7% | 73.8% | 82.9% | 76.8% | 0.349 | 88.0% | 0.923 |
+| small_examples_n8 | bge-small-en-v1.5 | label + synthetic example complaints | 11392 | 43.5% | 74.9% | 84.0% | 76.7% | 0.344 | 88.1% | 0.954 |
 
 No-retrieval baseline (global resolution prior): TV = 0.957
 
@@ -31,18 +32,35 @@ No-retrieval baseline (global resolution prior): TV = 0.957
 
 | Run | α | R@1 | R@5 | Category@1 | Volume-weighted R@1 | Res. TV@1 ↓ |
 |---|---|---|---|---|---|---|
-| labels_only | 0.0 | 39.8% | 65.8% | 67.6% | 31.9% | 0.395 |
-| labels_only | 0.01 | 37.9% | 64.7% | 66.0% | 40.6% | 0.409 |
-| labels_only | 0.02 | 34.2% | 62.1% | 62.1% | 44.1% | 0.440 |
-| labels_only | 0.04 | 24.1% | 51.5% | 48.7% | 50.3% | 0.546 |
 | small_examples | 0.0 | 43.5% | 73.2% | 76.0% | 34.3% | 0.346 |
 | small_examples | 0.01 | 42.3% | 72.8% | 74.8% | 41.8% | 0.353 |
 | small_examples | 0.02 | 39.1% | 70.5% | 71.2% | 46.3% | 0.380 |
 | small_examples | 0.04 | 27.9% | 57.9% | 57.5% | 48.3% | 0.493 |
+| labels_only | 0.0 | 39.8% | 65.8% | 67.6% | 31.9% | 0.395 |
+| labels_only | 0.01 | 37.9% | 64.7% | 66.0% | 40.6% | 0.409 |
+| labels_only | 0.02 | 34.2% | 62.1% | 62.1% | 44.1% | 0.440 |
+| labels_only | 0.04 | 24.1% | 51.5% | 48.7% | 50.3% | 0.546 |
 | m3_examples | 0.0 | 42.7% | 73.8% | 76.8% | 27.0% | 0.349 |
 | m3_examples | 0.01 | 41.6% | 72.7% | 75.6% | 35.7% | 0.359 |
 | m3_examples | 0.02 | 39.4% | 70.5% | 72.9% | 43.1% | 0.377 |
 | m3_examples | 0.04 | 30.4% | 61.0% | 61.8% | 52.4% | 0.469 |
+| small_examples_n8 | 0.0 | 43.5% | 74.9% | 76.7% | 29.3% | 0.344 |
+| small_examples_n8 | 0.01 | 42.3% | 73.4% | 75.4% | 37.3% | 0.350 |
+| small_examples_n8 | 0.02 | 38.3% | 69.6% | 71.6% | 42.7% | 0.382 |
+| small_examples_n8 | 0.04 | 27.0% | 57.7% | 56.9% | 48.6% | 0.499 |
+
+### Parser: LLM candidate selection vs retrieval top-1 (sampled eval queries)
+
+| Run | LLM | n | k | Gold in top-k | Category: retrieval → LLM | Pattern: retrieval → LLM | LLM picks gold when present | In-domain answered | OOD rejected: cosine / LLM / either |
+|---|---|---|---|---|---|---|---|---|---|
+| parse_small_top5 | gpt-4o-mini | 1000 | 5 | 73.3% | 75.7% → 83.1% | 42.8% → 57.2% | 78.0% | 96.5% | 76.0% / 28.0% / 76.0% |
+
+### End-to-end generation / system health (LLM-judged faithfulness, separate judge model)
+
+| Run | Generator / judge | n | Answered | Category acc (e2e) | Validator viol. (1st attempt) | Claims supported / partial / unsupported | Answers fully supported | Latency p50 / p95 (s) | OOD outside abstained | OOD borderline abstained |
+|---|---|---|---|---|---|---|---|---|---|---|
+| gen_v1 | gpt-4o-mini / gpt-4.1-mini | 150 | 97.3% | 79.3% | 55.2% | 82.9% / 5.9% / 11.2% | 28.1% | 7.1 / 11.1 | 66.2% | 6.7% |
+| gen_v2 | gpt-4o-mini / gpt-4.1-mini | 150 | 97.3% | 80.0% | 0.7% | 92.3% / 5.3% / 2.4% | 72.6% | 4.2 / 5.1 | 70.0% | 6.7% |
 <!-- ABLATION_TABLES:END -->
 
 ## Decision log
@@ -65,8 +83,42 @@ No-retrieval baseline (global resolution prior): TV = 0.957
 - **Result (in-domain kept / OOD rejected):** 0.72: 99.3% / 64% · 0.74: 97.6% / 76% · 0.76: 93.9% / 84% · 0.78: 86.3% / 92%. One OOD query scored 0.901.
 - **Decision:** cosine gate alone is insufficient (AUROC 0.938). Use ~0.74 as the first gate plus an LLM "none of these candidates" second gate; re-calibrate on the eval after that step exists.
 
+### A5. LLM candidate selection from top-5 vs retrieval top-1 (2026-10-03)
+- **Setup:** gpt-4o-mini, temperature 0, schema-constrained; shown the top-5 patterns with an agency-evidence snippet, may answer "none". 1,000 sampled eval queries + 25 OOD queries. Cost about $0.10 (599k prompt tokens). Report: `eval/reports/parse/parse_small_top5.json`.
+- **Result:** category 75.7% → **83.1%**, exact pattern 42.8% → **57.2%** (ceiling 73.3% = gold in top-5; LLM picks gold 78.0% of the time when present). False "none" on in-domain: 1.2%. OOD rejection: cosine gate 76%, LLM gate 28%, either 76%.
+- **Findings:**
+  - Selection is a clear win and is adopted for the parse step.
+  - The LLM "none" gate adds nothing over the cosine gate on this OOD set. It over-matches ("cancel phone contract" → Consumer Complaint / Cell Phone Store). Several OOD queries are arguably in scope for 311, which has Consumer Complaint, Landlord and Food Poisoning types, so the OOD set understates real abstention quality. Planned: split OOD into "truly outside 311" vs "borderline" and re-measure.
+  - Severity (98/451/441/10 over levels 2–5) and sentiment (84% "frustrated") discriminate weakly, and confidence is "high" 99% of the time, so it is not a usable signal. No ground truth yet; planned: 40 hand-labelled complaints.
+  - Measured accuracy understates the LLM: some gold labels are noisy (a "potholes" complaint generated from "Failed Street Repair"; the LLM picks Pothole).
+- **Decision:** keep candidate selection (k=5). Abstain on cosine < 0.74 (primary gate); the LLM "none" is a secondary gate. Do not use the model's confidence field. Revisit severity prompt after the hand-labelled check.
+
+### A6. Example complaints per pattern: 4 vs 8 (2026-10-03)
+- **Setup:** bge-small, label + 4 vs label + 8 LLM-written clear complaints per pattern (6,330 vs 10,126 vectors), same eval. Report: `eval/reports/small_examples_n8.json`.
+- **Result:** R@1 43.5% → 43.5%, R@5 73.2% → 74.9%, R@10 82.9% → 84.0%, category@1 76.0% → 76.7%, resolution TV 0.346 → 0.344, AUROC 0.938 → 0.954 (25 OOD queries, noisy). In-domain top-1 cosine median shifts 0.826 → 0.830, OOD median 0.700 → 0.719, so the gate would need recalibrating.
+- **Decision:** marginal gain (about 1.5 points at R@5, about 2 sigma) for a doubled index. Not adopted yet; revisit with the 110-query OOD sets (`eval/ood_outside.txt`, `eval/ood_borderline.txt`).
+
+### Observed in first end-to-end answers (2026-10-03, before the generation eval)
+- The validator checked only citation existence and numbers; claims were not checked for support. First answers contained agent "I will ..." promises and a wrong "few days" for a 334.5-hour median, all with valid citations.
+- **Changes:** prompt now forbids first-person promises, speculation and loose time words; durations are formatted once in the sources ("334.5 hours (about 14 days)"); a separate-model faithfulness judge and `scripts/eval_generation.py` measure support per claim.
+- Retrieval miss: for "no heat in my apartment" the correct pattern (Apartment Only / No Heat) was not in the top-5, so the LLM could not select it. Planned A7 tests showing more candidates.
+
+### A8. Generator prompt v1 → v2 (2026-10-03)
+- **v1 setup:** gpt-4o-mini writes opening-as-step, steps and outcomes; judge gpt-4.1-mini; 150 queries + 80 outside-311 + 30 borderline OOD. Report: `eval/reports/generation/gen_v1.json`.
+- **v1 result:** answered 97.3%, end-to-end category accuracy 79.3%. Validator first-attempt violations 55.2% with 0 fixed by retry. Claims supported 82.9% / partial 5.9% / unsupported 11.2%; only 28.1% of answers fully supported. p50/p95 latency 7.1 s / 11.1 s (generate stage about 6 s). Outside-311 queries abstained 66.2%, borderline 6.7%.
+- **Diagnosis:** 133 of 136 validator violations were "no citation" on the empathy step the prompt itself requested (design conflict, not hallucination). Unsupported claims were mostly generic advice ("keep track of developments") and "will investigate" predictions. Outcomes are table facts and need no LLM. Telecom/billing complaints over-matched "Consumer Complaint / Cell Phone Store".
+- **v2 changes:** separate uncited `opening` (no facts/numbers); "describe the past, do not predict"; no advice beyond the sources; outcomes rendered by code; judge covers summary + steps only; parser prompt gains scope guidance for private-company complaints (A9 inside the same run: compare outside-311 abstention).
+- **v2 result (`gen_v2.json`):** validator first-attempt violations 55.2% → 0.7%; claims supported 82.9% → 92.3%, unsupported 11.2% → 2.4%; answers fully supported 28.1% → 72.6%; latency p50/p95 7.1/11.1 s → 4.2/5.1 s (generate stage 6.0 → 3.0 s); answered 97.3% unchanged; end-to-end category accuracy 79.3% → 80.0% (parser retrieval unchanged); outside-311 abstention 66.2% → 70.0%; borderline unchanged at 6.7%. Cost of the run about $0.14 including the judge.
+- **Remaining non-supported claims (7.7%):** mostly summaries that over-infer or omit a minority outcome (23 partial), plus a few step-level "the agency will ..." predictions (16 unsupported).
+- **Finding from reading samples:** small-sample patterns have unreliable statistics (a newsstand pattern showed median = p90 = 1062 hours), so a "low evidence" policy note is now added when a pattern has fewer than 30 closed tickets.
+- **Decision:** adopt v2. The largest gain came from removing a conflict between the prompt (empathy step) and the validator (every step cited), and from moving table facts (outcomes, durations) out of the LLM into code. Known limitation: complaints about private companies (roaming charges, airlines) still match "Consumer Complaint" patterns; 30% of 80 outside-311 queries were answered. Mitigation is presentation (matched category + citations shown to the agent) and human routing, not a stricter gate.
+
 ## Open / planned ablations
-- LLM candidate selection from top-5 (category/product accuracy and second abstention gate), measured on a 1,000-query sample.
+- A7: candidates shown to the parser, k = 5 vs 8 vs 10 (`eval_parse.py --k`).
+- Siblings in rag_core context: with vs without (the heat example pulled in an irrelevant "No Cold Water" sibling).
+- Runtime judge-in-the-loop vs validator only.
+- Split the OOD set (truly outside 311 vs borderline) and recompute abstention for both gates.
+- Hand-label ~40 complaints for severity and sentiment; tune the severity rubric.
 - Dense vs dense + BM25 (RRF). Skipped unless time allows.
 - F2LLM 0.6B embedder. Unverified model; only if it loads easily.
 - Generation: citation-validity and groundedness with vs without the validator/retry.

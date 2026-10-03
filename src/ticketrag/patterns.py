@@ -44,7 +44,9 @@ def clean_tickets(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     df["close_hours"] = (df["closed_date"] - df["created_date"]).dt.total_seconds() / 3600
     df["pattern_id"] = [_hash(*r) for r in df[KEY_COLS].itertuples(index=False)]
     df["resolution_id"] = df["resolution_description"].map(lambda t: _hash(t))
-    return df.reset_index(drop=True), report
+    keep = ["unique_key", "created_date", "closed_date", *KEY_COLS, "resolution_description",
+            "close_hours", "pattern_id", "resolution_id"]
+    return df[keep].reset_index(drop=True), report  # drop the other 30+ columns of the full 311 export
 
 
 def assign_tier(top1_share: float, total: int) -> str:

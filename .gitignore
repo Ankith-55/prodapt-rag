@@ -9,3 +9,5 @@ data/cache/
 dataset/
 .env
 output/
+data/demo_state/
+data/snapshots/

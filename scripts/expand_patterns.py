@@ -11,21 +11,9 @@ from pathlib import Path
 import pandas as pd
 
 from ticketrag import runlog
+from ticketrag.examples import STYLES, generate_complaints
 from ticketrag.llm import LLM
 from ticketrag.retrieve import pattern_text
-
-STYLES = {
-    "index": ("Write clear, natural first-person complaints a resident would phone in. Vary length "
-              "(1-3 sentences), tone and the details mentioned (time, duration, impact)."),
-    "eval": ("Write MESSY, realistic complaints as people actually type or say them: typos, slang, run-ons, "
-             "emotion, irrelevant side details, sometimes vague. Vary length from one line to a short rant."),
-}
-SCHEMA = {
-    "type": "object",
-    "properties": {"complaints": {"type": "array", "items": {"type": "string"}}},
-    "required": ["complaints"],
-    "additionalProperties": False,
-}
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--role", choices=STYLES, required=True)
@@ -33,10 +21,11 @@ ap.add_argument("--n", type=int, default=4, help="complaints per pattern")
 ap.add_argument("--limit", type=int, default=0, help="only the first N patterns (0 = all)")
 ap.add_argument("--workers", type=int, default=8)
 ap.add_argument("--patterns", default="data/processed/patterns.parquet")
+ap.add_argument("--suffix", default="", help="output name suffix, e.g. _n8 for an ablation set")
 a = ap.parse_args()
 
-runlog.start(f"expand_patterns_{a.role}")
-out_path = Path("data/processed") / f"pattern_examples_{a.role}.jsonl"
+runlog.start(f"expand_patterns_{a.role}{a.suffix}")
+out_path = Path("data/processed") / f"pattern_examples_{a.role}{a.suffix}.jsonl"
 pat = pd.read_parquet(a.patterns)
 if a.limit:
     pat = pat.head(a.limit)
@@ -47,20 +36,15 @@ todo = [r for r in pat.itertuples() if r.pattern_id not in done]
 print(f"{len(pat)} patterns, {len(done)} already done, {len(todo)} to generate (role={a.role})")
 
 llm = LLM()
-SYSTEM = ("You write realistic complaints that residents of New York City submit to the 311 hotline. "
-          f"{STYLES[a.role]} Never mention '311', ticket categories, or agency names unless a real person "
-          "naturally would. Do not copy the category label verbatim; describe the situation in your own "
-          "words. Each complaint must be about the described problem only.")
 
 
 def gen(r):
     label = pattern_text(r.complaint_type, r.descriptor, r.descriptor_2)
-    user = f"Problem category (hidden from the resident): {label}\nWrite {a.n} different complaints."
     try:
-        res = llm.json(SYSTEM, user, SCHEMA, name="complaints", temperature=0.9, max_tokens=1500)
+        complaints = generate_complaints(llm, label, a.role, a.n)
     except Exception as e:  # one bad pattern must not kill the batch; a rerun retries it
         return {"failed": r.pattern_id, "error": f"{type(e).__name__}: {e}"}
-    return {"pattern_id": r.pattern_id, "label": label, "complaints": res["complaints"][: a.n]}
+    return {"pattern_id": r.pattern_id, "label": label, "complaints": complaints}
 
 
 failed = []
@@ -77,8 +61,3 @@ with ThreadPoolExecutor(a.workers) as ex, out_path.open("a", encoding="utf-8") a
 print("done ->", out_path)
 if failed:
     print(f"{len(failed)} patterns failed (rerun this command to retry them):", *failed[:5], sep="\n  ")
-for line in out_path.read_text(encoding="utf-8").splitlines()[:3]:
-    row = json.loads(line)
-    print("\n", row["label"])
-    for c in row["complaints"]:
-        print("   -", c)

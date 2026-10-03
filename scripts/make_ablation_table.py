@@ -35,6 +35,36 @@ for tag, r in loaded:
         lines.append(f"| {tag} | {alpha} | {pct(m['recall@1'])} | {pct(m['recall@5'])} | {pct(m['category@1'])} "
                      f"| {pct(m['volume_weighted_recall@1'])} | {m['resolution_tv@1']:.3f} |")
 
+parse_reports = sorted(Path("eval/reports/parse").glob("*.json"), key=lambda p: p.stat().st_mtime)
+if parse_reports:
+    lines += ["", "### Parser: LLM candidate selection vs retrieval top-1 (sampled eval queries)", "",
+              "| Run | LLM | n | k | Gold in top-k | Category: retrieval → LLM | Pattern: retrieval → LLM | "
+              "LLM picks gold when present | In-domain answered | OOD rejected: cosine / LLM / either |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
+    for p in parse_reports:
+        r = json.loads(p.read_text())
+        lines.append(f"| {r['tag']} | {r['model']} | {r['n']} | {r['k']} | {pct(r['ceiling_gold_in_topk'])} "
+                     f"| {pct(r['retrieval_top1_category'])} → {pct(r['llm_category'])} "
+                     f"| {pct(r['retrieval_top1_pattern'])} → {pct(r['llm_pattern'])} "
+                     f"| {pct(r['llm_pick_gold_given_in_topk'])} | {pct(r['in_domain_answered_both_gates'])} "
+                     f"| {pct(r['ood_reject_cosine'])} / {pct(r['ood_reject_llm'])} / {pct(r['ood_reject_either'])} |")
+
+gen_reports = sorted(Path("eval/reports/generation").glob("*.json"), key=lambda p: p.stat().st_mtime)
+if gen_reports:
+    lines += ["", "### End-to-end generation / system health (LLM-judged faithfulness, separate judge model)", "",
+              "| Run | Generator / judge | n | Answered | Category acc (e2e) | Validator viol. (1st attempt) | "
+              "Claims supported / partial / unsupported | Answers fully supported | Latency p50 / p95 (s) | "
+              "OOD outside abstained | OOD borderline abstained |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for p in gen_reports:
+        r = json.loads(p.read_text())
+        f = r["faithfulness_item_pct"]
+        lines.append(f"| {r['tag']} | {r['generator']} / {r['judge']} | {r['n']} | {r['answered_pct']}% "
+                     f"| {r['end_to_end_category_acc_pct']}% | {r['validator_first_attempt_violation_pct']}% "
+                     f"| {f.get('supported', 0)}% / {f.get('partial', 0)}% / {f.get('unsupported', 0)}% "
+                     f"| {r['faithfulness_answer_fully_supported_pct']}% "
+                     f"| {r['latency_ms']['p50'] / 1000:.1f} / {r['latency_ms']['p95'] / 1000:.1f} "
+                     f"| {r['ood_outside']['abstained_pct']}% | {r['ood_borderline']['abstained_pct']}% |")
+
 block = "\n".join([START, *lines, END])
 text = DOC.read_text(encoding="utf-8")
 if START not in text:

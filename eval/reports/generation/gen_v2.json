@@ -1,0 +1,99 @@
+{
+  "tag": "gen_v2",
+  "generator": "gpt-4o-mini",
+  "judge": "gpt-4.1-mini",
+  "n": 150,
+  "k": 5,
+  "gate": 0.74,
+  "answered_pct": 97.3,
+  "abstain_reasons": {
+    "low_similarity": 3,
+    "llm_no_matching_candidate": 1
+  },
+  "tier_mix_answered": {
+    "rag_light": 105,
+    "rag_core": 38,
+    "fast_lookup": 3
+  },
+  "end_to_end_category_acc_pct": 80.0,
+  "category_acc_when_answered_pct": 82.2,
+  "validator_first_attempt_violation_pct": 0.7,
+  "validator_remaining_violation_pct": 0.7,
+  "template_fallback_from_llm_tier": 0,
+  "faithfulness_item_pct": {
+    "supported": 92.3,
+    "partial": 5.3,
+    "unsupported": 2.4
+  },
+  "faithfulness_answer_fully_supported_pct": 72.6,
+  "faithfulness_by_method": {
+    "llm": {
+      "answers": 143,
+      "items": 656,
+      "supported_pct": 92.2
+    },
+    "template": {
+      "answers": 3,
+      "items": 9,
+      "supported_pct": 100.0
+    }
+  },
+  "latency_ms": {
+    "p50": 4173,
+    "p95": 5147,
+    "mean_stage": {
+      "retrieve": 47,
+      "parse": 1089,
+      "generate": 3026
+    }
+  },
+  "usage_generator": {
+    "calls": 409,
+    "cache_hits": 0,
+    "prompt_tokens": 303610,
+    "completion_tokens": 46768
+  },
+  "usage_judge": {
+    "calls": 146,
+    "cache_hits": 0,
+    "prompt_tokens": 93744,
+    "completion_tokens": 16976
+  },
+  "ood_outside": {
+    "n": 80,
+    "abstained_pct": 70.0,
+    "reasons": {
+      "answered": 24,
+      "low_similarity": 42,
+      "llm_no_matching_candidate": 14
+    },
+    "passed_through_examples": [
+      "Consumer Complaint / Employment Agency / Goods or Services Not Delivered <- It\u2019s been three days with NO internet! I\u2019m trying to work from home and I can\u2019t ",
+      "Consumer Complaint / Cell Phone Store / Advertising False or Misleading <- I can't believe I was charged an extra $200 for roaming when I went to Canada, I",
+      "Consumer Complaint / Cell Phone Store / Contract or Billing Dispute <- I was promised unlimited data while traveling, but I got hit with these crazy ch",
+      "Consumer Complaint / Cell Phone Store / Contract or Billing Dispute <- Every time I try to use my phone abroad, I get these texts saying I'm nearing my",
+      "Consumer Complaint / Cell Phone Store / Contract or Billing Dispute <- I switched to this plan because it was supposed to be cheaper and better for int",
+      "Lost Property / Bag/Wallet / Tote Bag <- My suitcase was lost, and I have no idea when I\u2019ll get it back. I had to buy new",
+      "Consumer Complaint / Travel Agency / Contract Dispute <- I requested a refund for my canceled flight a month ago and still haven\u2019t heard ",
+      "Consumer Complaint / Online or Mail Order / Goods or Services Not Delivered <- I ordered these shoes weeks ago, and I keep getting the runaround from customer "
+    ]
+  },
+  "ood_borderline": {
+    "n": 30,
+    "abstained_pct": 6.7,
+    "reasons": {
+      "answered": 28,
+      "low_similarity": 2
+    },
+    "passed_through_examples": [
+      "Consumer Complaint / Landlord or Real Estate Agent / Required to Use Agent <- I can't believe my landlord is refusing to return my security deposit! I left th",
+      "Consumer Complaint / Landlord or Real Estate Agent / Required to Use Agent <- This is outrageous! My landlord is saying they won't return my deposit because o",
+      "Consumer Complaint / Landlord or Real Estate Agent / Fees or Surcharges Not Disclosed <- I just found out that my landlord is keeping my entire security deposit for thin",
+      "Consumer Complaint / Landlord or Real Estate Agent / Required to Use Agent <- I moved out months ago and my landlord still hasn't returned my security deposit",
+      "Consumer Complaint / Landlord or Real Estate Agent / Required to Use Agent <- This is ridiculous! My landlord is holding my security deposit hostage over sill",
+      "Food Poisoning / 1 or 2 <- I went to this restaurant last night and the chicken I ordered tasted off, like ",
+      "Food Establishment / Food Temperature / Food Raw/Undercooked <- I can't believe I paid so much for that rubbery steak. It was practically inedib",
+      "Food Establishment / Food Temperature / Food Raw/Undercooked <- Last week I had a burger here and it was so undercooked, I almost choked on it! "
+    ]
+  }
+}
