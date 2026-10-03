@@ -1,0 +1,13 @@
+LICENSE
+pyproject.toml
+requirements.txt
+src/ticketrag/__init__.py
+src/ticketrag/embed.py
+src/ticketrag/patterns.py
+src/ticketrag/retrieve.py
+src/ticketrag/store.py
+src/ticketrag.egg-info/PKG-INFO
+src/ticketrag.egg-info/SOURCES.txt
+src/ticketrag.egg-info/dependency_links.txt
+src/ticketrag.egg-info/requires.txt
+src/ticketrag.egg-info/top_level.txt

@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: ticketrag
+Version: 0.1.0
+Summary: Semantic resolution assistant for support-desk tickets (RAG over NYC 311 history)
+Requires-Python: >=3.10
+License-File: LICENSE
+Requires-Dist: pandas>=2.0
+Requires-Dist: pyarrow>=14
+Requires-Dist: numpy<2
+Requires-Dist: sentence-transformers>=3.0
+Requires-Dist: faiss-cpu>=1.8
+Requires-Dist: rank-bm25>=0.2.2
+Requires-Dist: openai>=1.40
+Requires-Dist: pydantic>=2.6
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn>=0.29
+Requires-Dist: prometheus-client>=0.20
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: pytest>=8
+Requires-Dist: ruff>=0.4
+Dynamic: license-file

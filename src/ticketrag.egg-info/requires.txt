@@ -1,0 +1,14 @@
+pandas>=2.0
+pyarrow>=14
+numpy<2
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+rank-bm25>=0.2.2
+openai>=1.40
+pydantic>=2.6
+fastapi>=0.110
+uvicorn>=0.29
+prometheus-client>=0.20
+python-dotenv>=1.0
+pytest>=8
+ruff>=0.4
