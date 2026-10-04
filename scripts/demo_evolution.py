@@ -65,7 +65,7 @@ def show(title, r):
     print(f"\n--- {title}")
     if r.abstained:
         print(f"ABSTAINED: {r.abstain_reason}")
-        print("nearest:", [f"{s:.2f} {l}" for l, s in r.candidates[:3]])
+        print("nearest:", [f"{s:.2f} {label}" for label, s in r.candidates[:3]])
         return
     print(f"ANSWERED: {r.category} / {r.product} | tier={r.tier} | severity={r.severity} sentiment={r.sentiment}")
     print("opening:", r.answer.get("opening"))

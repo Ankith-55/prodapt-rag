@@ -1,0 +1,40 @@
+INFO:     10.224.0.4:56816 - "GET /ready HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59674 - "GET / HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59680 - "GET /app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59674 - "GET /style.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59680 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:45122 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:45128 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:53224 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60548 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60550 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:49598 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:47436 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:47450 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:52510 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:36344 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:36346 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:53244 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:42066 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:42074 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46832 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:33580 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:33582 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:42770 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:56954 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:56960 - "GET /ready HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52332 - "POST /ask HTTP/1.1" 401 Unauthorized
+INFO:     10.224.0.4:46564 - "GET /ready HTTP/1.1" 200 OK
+HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     10.224.0.4:42880 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:42892 - "GET /ready HTTP/1.1" 200 OK
+HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+{"event": "ask", "request_id": "5c989f80039f4a23bb2d6b6a27ada04c", "complaint_sha1": "b052af9962", "complaint_chars": 35, "abstained": false, "reason": null, "tier": "rag_light", "method": "llm", "severity": 3, "top_score": 0.777, "latency_ms": 7734, "tokens": 1589}
+INFO:     127.0.0.1:34170 - "POST /ask HTTP/1.1" 200 OK
+INFO:     10.224.0.4:57710 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:45600 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:45616 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:52784 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46872 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46880 - "GET /ready HTTP/1.1" 200 OK
+INFO:     10.224.0.4:56364 - "GET /ready HTTP/1.1" 200 OK

@@ -1,6 +1,6 @@
 import pytest
-from helpers import FakeEmbedder, StubLLM, make_raw
 
+from helpers import FakeEmbedder, StubLLM, make_raw
 from ticketrag.ingest import init_state
 from ticketrag.patterns import clean_tickets
 from ticketrag.pipeline import Assistant

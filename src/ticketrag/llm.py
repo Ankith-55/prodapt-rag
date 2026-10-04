@@ -16,14 +16,15 @@ DEFAULT_MODEL = "gpt-4o-mini"
 
 
 class LLM:
-    def __init__(self, model: str | None = None, cache_dir: str | Path = "data/cache/llm"):
+    def __init__(self, model: str | None = None, cache_dir: str | Path | None = None):
         from openai import OpenAI
 
         load_dotenv()
         self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
         # reads OPENAI_API_KEY from the environment; the SDK itself also retries 429/5xx with backoff
         self.client = OpenAI(max_retries=4, timeout=60.0)
-        self.cache_dir = Path(cache_dir)
+        # TICKETRAG_CACHE_DIR lets a container point the cache at a writable path (e.g. /tmp or a mounted volume)
+        self.cache_dir = Path(cache_dir or os.getenv("TICKETRAG_CACHE_DIR", "data/cache/llm"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.usage = {"calls": 0, "cache_hits": 0, "prompt_tokens": 0, "completion_tokens": 0}
 
@@ -32,6 +33,8 @@ class LLM:
 
     def json(self, system: str, user: str, schema: dict, name: str = "result",
              temperature: float = 0.0, max_tokens: int = 1000, retries: int = 6) -> dict:
+        from openai import AuthenticationError, BadRequestError, NotFoundError, PermissionDeniedError
+
         key = self._key(self.model, system, user, schema, temperature)
         cache_file = self.cache_dir / f"{key}.json"
         if cache_file.exists():
@@ -59,6 +62,8 @@ class LLM:
                     raise ValueError(f"finish_reason={choice.finish_reason}")
                 out = json.loads(choice.message.content)
                 break
+            except (AuthenticationError, PermissionDeniedError, NotFoundError, BadRequestError):
+                raise  # retrying cannot fix a bad key, missing model or malformed request
             except Exception:  # rate limit, transient network error, truncated or invalid JSON
                 if attempt == retries - 1:
                     raise

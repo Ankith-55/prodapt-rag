@@ -1,5 +1,4 @@
 from helpers import good_answer
-
 from ticketrag.generate import build_sources, generate_answer, render_template, validate
 from ticketrag.parse import Parsed
 

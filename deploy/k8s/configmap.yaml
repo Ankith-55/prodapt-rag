@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ticketrag-config
+  namespace: ticketrag
+data:
+  TICKETRAG_STATE: /data/state
+  TICKETRAG_GATE: "0.74"        # similarity threshold for abstaining
+  TICKETRAG_K: "5"              # candidates shown to the parser
+  TICKETRAG_SIBLINGS: "0"
+  TICKETRAG_CACHE_DIR: /tmp/llm-cache
+  TICKETRAG_IMMUTABLE: "1"      # state is baked into the image: /ingest is disabled, ingest offline and roll a new image
+  OPENAI_MODEL: gpt-4o-mini

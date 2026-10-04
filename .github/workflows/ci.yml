@@ -1,0 +1,113 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install (CPU-only torch keeps the install small and fast)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-dev.txt
+          pip install --no-deps -e .
+      - name: Lint
+        run: ruff check src tests scripts
+      - name: Unit and API tests (stub LLM and fake embedder, so no secrets and no downloads)
+        run: pytest -q --cov=ticketrag --cov-report=term-missing
+
+  container-smoke:
+    needs: lint-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-bge-small-en-v1.5
+      - name: Install
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+          pip install --no-deps -e .
+      - name: Retrieval gate (real embedder on a tiny fixture; fails the build if retrieval regresses)
+        run: python scripts/make_fixture_state.py --out "$RUNNER_TEMP/fixture_state" --check
+      - name: Build image
+        run: docker build -t ticketrag:ci .
+      - name: Run the container and exercise it
+        run: |
+          # A dummy key on purpose: the LLM call fails, which also proves the degraded (statistics-only) path in the container.
+          docker run -d --name tr -p 8000:8000 -e OPENAI_API_KEY=sk-dummy -e TICKETRAG_GATE=0.5 \
+            -v "$RUNNER_TEMP/fixture_state:/data/state" ticketrag:ci
+          for i in $(seq 1 90); do curl -sf localhost:8000/ready && break; sleep 2; done
+          curl -sf localhost:8000/ready
+          curl -sf localhost:8000/health
+          curl -sf -X POST localhost:8000/ask -H 'Content-Type: application/json' \
+            -d '{"complaint": "loud music and a party next door at night"}' | tee ask.json
+          python - <<'PY'
+          import json
+          body = json.load(open("ask.json"))
+          assert not body["abstained"], body
+          assert body["category"] == "Noise - Residential", body["category"]
+          assert body["method"] == "template_degraded", body["method"]
+          print("container smoke test passed")
+          PY
+          curl -sf localhost:8000/metrics | grep ticketrag_requests_total
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker logs tr
+
+  publish:
+    needs: container-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image name (GHCR requires lowercase)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+# Deployment to AKS is deliberately not automated here: the cluster image bundles pre-built ticket state, which is
+# not in the repository. Use deploy/deploy_aks.ps1 (see docs/production_scale.md). In production the state would come
+# from object storage and a deploy job would only roll the image tag.

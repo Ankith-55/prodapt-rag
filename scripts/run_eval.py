@@ -93,6 +93,7 @@ for t in np.arange(0.50, 0.85, 0.02):
     print(f"  thr={t:.2f}  keep in-domain {rows[-1]['in_domain_kept']:.1%}   reject OOD {rows[-1]['ood_rejected']:.1%}")
 report["abstention"] = {"auroc": auc, "curve": rows}
 
-out = Path("eval/reports"); out.mkdir(parents=True, exist_ok=True)
+out = Path("eval/reports")
+out.mkdir(parents=True, exist_ok=True)
 (out / f"{a.tag}.json").write_text(json.dumps(report, indent=2, default=str))
 print("\nreport ->", out / f"{a.tag}.json")

@@ -8,7 +8,6 @@ ticket's real resolution, against two baselines (complaint_type-level and global
 Never ingest the batch into --state before running this (tickets already in the state are skipped and reported)."""
 import argparse
 import json
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np

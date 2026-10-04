@@ -22,5 +22,10 @@ ticketrag = ["static/*"]
 line-length = 110
 src = ["src", "tests", "scripts"]
 
+[tool.ruff.lint]
+# Pinned so CI does not depend on whatever default rule set a given ruff version ships:
+# pycodestyle errors, pyflakes (unused imports/variables, undefined names) and import sorting.
+select = ["E4", "E7", "E9", "F", "I"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

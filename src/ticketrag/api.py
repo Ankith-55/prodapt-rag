@@ -29,7 +29,14 @@ from typing import Any
 import pandas as pd
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
-from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram, generate_latest
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 from pydantic import BaseModel, Field
 
 from ticketrag.ingest import apply_batch
@@ -126,6 +133,7 @@ def create_app(assistant: Assistant | None = None) -> FastAPI:
     holder: dict[str, Any] = {"assistant": assistant}
     ingest_lock = threading.Lock()  # one ingestion at a time; searches keep serving the old state meanwhile
     api_key = os.getenv("TICKETRAG_API_KEY")
+    immutable = os.getenv("TICKETRAG_IMMUTABLE") == "1"  # baked-in state: live ingestion would diverge across replicas
 
     def update_gauges() -> None:
         a = holder["assistant"]
@@ -187,6 +195,8 @@ def create_app(assistant: Assistant | None = None) -> FastAPI:
 
     @app.post("/ingest", dependencies=[Depends(require_key)])
     def ingest(req: IngestRequest) -> dict:
+        if immutable:
+            raise HTTPException(403, "state is immutable in this deployment: ingest offline and roll out a new state image")
         a = get_assistant()
         df = pd.DataFrame(req.tickets).astype(str)
         missing = [c for c in REQUIRED_TICKET_COLUMNS if c not in df.columns]

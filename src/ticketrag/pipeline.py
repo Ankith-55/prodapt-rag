@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-from ticketrag.generate import GenReport, build_sources, generate_answer, render_template
+from ticketrag.generate import build_sources, generate_answer, render_template
 from ticketrag.llm import LLM
 from ticketrag.parse import candidate_label, parse_complaint
 from ticketrag.retrieve import PatternRetriever, _tidy

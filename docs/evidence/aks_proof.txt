@@ -1,0 +1,11 @@
+NAME                             READY   STATUS    RESTARTS   AGE    IP            NODE                                NOMINATED NODE   READINESS GATES
+pod/ticketrag-64488df645-rlhpd   1/1     Running   0          112m   10.244.0.40   aks-nodepool1-12601822-vmss000000   <none>           <none>
+
+NAME                TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/ticketrag   ClusterIP   10.0.77.192   <none>        80/TCP    92m   app.kubernetes.io/name=ticketrag
+
+NAME                                            REFERENCE              TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/ticketrag   Deployment/ticketrag   cpu: 0%/70%   1         3         1          112m
+
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS   IMAGES                                          SELECTOR
+deployment.apps/ticketrag   1/1     1            1           112m   ticketrag    ticketrag4296.azurecr.io/ticketrag-demo:0.1.0   app.kubernetes.io/name=ticketrag

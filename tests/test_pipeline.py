@@ -32,7 +32,6 @@ def test_severity_policy_notes(assistant, stub):
 
 def test_low_evidence_note_for_small_patterns(state, stub):
     from helpers import FakeEmbedder, make_raw
-
     from ticketrag.ingest import apply_batch
     from ticketrag.pipeline import Assistant
     from ticketrag.retrieve import PatternRetriever

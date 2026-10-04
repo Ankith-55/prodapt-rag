@@ -1,0 +1,19 @@
+# DEMO ONLY: temporary public endpoint (Azure load balancer, plain HTTP). Use when kubectl port-forward is not usable.
+# /ask, /ingest and /reload require the X-API-Key; /health, /ready, /metrics and the static UI page are open.
+# Delete it after the demo:  kubectl delete -f deploy/k8s/service-public.yaml
+# For anything beyond a demo, put an ingress with TLS, authentication and rate limiting in front instead.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketrag-public
+  namespace: ticketrag
+  labels:
+    app.kubernetes.io/name: ticketrag
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: ticketrag
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

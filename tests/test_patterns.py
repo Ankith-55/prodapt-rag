@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from ticketrag.patterns import assign_tier, build_pattern_table, clean_tickets, fix_mojibake
+from ticketrag.patterns import assign_tier, clean_tickets, fix_mojibake
 
 
 def test_fix_mojibake_repairs_double_encoded_utf8():

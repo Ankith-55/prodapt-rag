@@ -32,7 +32,7 @@ for q in a.complaint or DEMO:
     print("COMPLAINT:", q)
     if r.abstained:
         print(f"ABSTAINED: {r.abstain_reason}. Route to a human agent.")
-        print("Nearest (low confidence):", *[f"  {s:.3f} {l}" for l, s in r.candidates[:3]], sep="\n")
+        print("Nearest (low confidence):", *[f"  {s:.3f} {label}" for label, s in r.candidates[:3]], sep="\n")
     else:
         print(f"PARSED: category={r.category} | product={r.product} | severity={r.severity}/5 | "
               f"sentiment={r.sentiment} | tier={r.tier} | cosine={r.top_score:.3f}")

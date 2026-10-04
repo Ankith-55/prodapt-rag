@@ -11,3 +11,4 @@ dataset/
 output/
 data/demo_state/
 data/snapshots/
+deploy/aks-build/state/

@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
-from helpers import make_raw
 
+from helpers import make_raw
 from ticketrag.api import create_app
 
 
@@ -82,3 +82,11 @@ def test_ui_is_served_with_strict_csp_and_api_routes_still_win(client):
     assert client.get("/app.js").status_code == 200 and client.get("/style.css").status_code == 200
     assert client.get("/health").json() == {"status": "ok"}  # mounting "/" did not shadow API routes
     assert "content-security-policy" not in client.get("/health").headers
+
+
+def test_ingest_is_refused_in_immutable_mode(assistant, monkeypatch):
+    monkeypatch.setenv("TICKETRAG_IMMUTABLE", "1")
+    c = TestClient(create_app(assistant))
+    r = c.post("/ingest", json={"tickets": [{"unique_key": "1"}]})
+    assert r.status_code == 403 and "immutable" in r.json()["detail"]
+    assert c.post("/ask", json={"complaint": "loud music party noise next door"}).status_code == 200  # serving unaffected

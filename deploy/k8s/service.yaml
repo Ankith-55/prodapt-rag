@@ -1,0 +1,18 @@
+# ClusterIP on purpose. The service holds an OpenAI key, so it is not exposed publicly by default.
+# Demo access:   kubectl -n ticketrag port-forward svc/ticketrag 8000:80    then open http://localhost:8000/
+# To expose it, put an authenticated ingress with rate limiting and TLS in front (see docs/production_scale.md).
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketrag
+  namespace: ticketrag
+  labels:
+    app.kubernetes.io/name: ticketrag
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ticketrag
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

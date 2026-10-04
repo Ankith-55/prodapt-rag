@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketrag
+  namespace: ticketrag
+  labels:
+    app.kubernetes.io/name: ticketrag
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5          # keeps old ReplicaSets so `kubectl rollout undo` works
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0            # never drop below the serving replica during a rollout
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ticketrag
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ticketrag
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: /metrics
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ticketrag
+          image: REPLACE_ACR.azurecr.io/ticketrag-demo:REPLACE_TAG   # filled in by deploy/deploy_aks.ps1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: ticketrag-config
+            - secretRef:
+                name: ticketrag-secrets      # OPENAI_API_KEY, TICKETRAG_API_KEY (created by the deploy script, never committed)
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          startupProbe:                      # the embedding model takes a while to load
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:                    # only receive traffic once the index is loaded
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

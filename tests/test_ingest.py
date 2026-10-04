@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
-from helpers import FakeEmbedder, StubLLM, make_raw
 
+from helpers import FakeEmbedder, StubLLM, make_raw
 from ticketrag.ingest import apply_batch
 from ticketrag.retrieve import PatternRetriever, pid_to_int
 
