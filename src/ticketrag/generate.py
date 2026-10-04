@@ -51,6 +51,8 @@ Rules:
   will ...". Never promise investigations, follow-ups, repairs or outcomes.
 - Do not add advice the sources do not contain (for example "keep a log", "follow up", "contact another agency").
 - Do not invent facts, phone numbers, deadlines, fees or policies. If no source supports a statement, do not write it.
+- A source marked "[text cut off in the source data]" ends mid-sentence: use only what it actually says and
+  never guess the missing ending.
 - Numbers: use only numbers that appear in the sources, copied exactly. Never add, average or compute new ones.
 - Time: quote the median and the 90% figure exactly as written in the sources, using the words "median" and
   "90% of tickets". Never say "most tickets", "a few days" or any other loose estimate.
@@ -58,6 +60,13 @@ Rules:
 
 _CITE = re.compile(r"\[?\b[PR]\d+\b\]?")
 _NUM = re.compile(r"\d+(?:\.\d+)?")
+_PREDICTION = re.compile(r"\b(will|won't|going to)\b", re.IGNORECASE)
+
+
+def is_truncated(text: str) -> bool:
+    """Some resolution templates are cut off at 500 characters in the source data itself (about 3% of tickets)."""
+    t = text.rstrip()
+    return len(t) >= 499 and not t.endswith((".", "!", "?", '"', ")"))
 
 
 def _dur(hours: float) -> str:
@@ -82,8 +91,11 @@ def build_sources(main: Hit, siblings: list[Hit], n_res: int = 3, sib_res: int =
             if rid is None:
                 rid = f"R{len(rid_of) + 1}"
                 rid_of[r["resolution_id"]] = rid
-                items[rid] = {"kind": "resolution", "resolution_id": r["resolution_id"], "text": r["text"]}
-                res_lines.append(f'[{rid}] Recorded resolution: "{textwrap.shorten(r["text"], max_chars, placeholder=" ...")}"')
+                cut = is_truncated(r["text"])
+                items[rid] = {"kind": "resolution", "resolution_id": r["resolution_id"], "text": r["text"],
+                              "truncated_in_source": cut}
+                note = " [text cut off in the source data]" if cut else ""
+                res_lines.append(f'[{rid}] Recorded resolution: "{textwrap.shorten(r["text"], max_chars, placeholder=" ...")}"{note}')
             refs.append(f"{rid} ({r['share']:.0%})")
         items[pid] = {"kind": "pattern", "pattern_id": hit.pattern_id, "label": candidate_label(hit)}
         lines.append(f'[{pid}] Past closed tickets of type "{candidate_label(hit)}": {hit.total_cases} tickets; '
@@ -106,6 +118,8 @@ def _check(item: dict, src: Sources) -> str | None:
     stray = [n for n in _NUM.findall(_CITE.sub("", item["text"])) if n not in src.numbers]
     if stray:
         return f"number(s) {stray} not found in the sources"
+    if _PREDICTION.search(item["text"]):
+        return "predicts the future (will / going to); describe what past tickets recorded instead"
     return None
 
 
@@ -144,9 +158,14 @@ def _first_sentences(text: str, n: int = 2) -> str:
 
 def outcomes_from_sources(main: Hit, src: Sources, n: int = 4) -> list[dict]:
     """Outcomes are table facts: rendered by code, each cited to the pattern and its resolution text."""
-    return [{"text": f"{r['share']:.0%} of tickets: " + _first_sentences(r["text"], 1),
-             "citations": ["P1", src.rid_of[r["resolution_id"]]]}
-            for r in main.resolutions[:n] if r["resolution_id"] in src.rid_of]
+    shown = [r for r in main.resolutions[:n] if r["resolution_id"] in src.rid_of]
+    outcomes = [{"text": f"{r['share']:.0%} of tickets: " + _first_sentences(r["text"], 1),
+                 "citations": ["P1", src.rid_of[r["resolution_id"]]]} for r in shown]
+    rest = round(1 - sum(r["share"] for r in shown), 2)  # shares are fractions of all tickets of the pattern
+    if rest >= 0.02:
+        outcomes.append({"text": f"{rest:.0%} of tickets: Other recorded resolutions (not listed individually).",
+                         "citations": ["P1"]})
+    return outcomes
 
 
 @dataclass

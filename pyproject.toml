@@ -15,6 +15,9 @@ dependencies = { file = ["requirements.txt"] }
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+ticketrag = ["static/*"]
+
 [tool.ruff]
 line-length = 110
 src = ["src", "tests", "scripts"]

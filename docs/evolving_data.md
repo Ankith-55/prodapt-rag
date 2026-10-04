@@ -98,3 +98,37 @@ hysteresis (change tier only when a pattern clears the threshold by a margin) be
 - This shows **implementability**, not retrieval quality on new classes.
 - `data/processed` stays the reproducible 9-day baseline the eval is built on; ingestion is exercised in a separate
   state (`scripts/demo_evolution.py`, `scripts/ingest.py`) and in the API.
+
+## 6. Temporal backtest on real tickets (`scripts/backtest_temporal.py`, report `eval/reports/backtest/backtest_mar10_12.json`)
+
+Train state: 94,674 tickets (03-01..03-09). Test: 33,773 real closed tickets (03-10..03-12). No LLM or embeddings:
+each test ticket's pattern is looked up and we measure the probability the pattern's *historical* resolution
+distribution gave to the ticket's *real* resolution. Baselines: complaint-type distribution, global distribution.
+
+| Slice | Test tickets | Mean p(real) pattern | Mean p(real) type | Mean p(real) global | Top-1 realised | Top-1 predicted | Top-3 coverage |
+|---|---|---|---|---|---|---|---|
+| All seen patterns (98.8% of tickets) | 33,374 | **0.315** | 0.271 | 0.040 | 40.6% | 43.4% | 78.5% |
+| fast_lookup | 1,064 | 0.905 | 0.846 | 0.021 | 93.5% | 96.4% | 97.5% |
+| rag_light | 7,995 | 0.487 | 0.380 | 0.021 | 58.1% | 65.6% | 90.7% |
+| rag_core | 24,315 | 0.233 | 0.210 | 0.047 | 32.5% | 33.8% | 73.7% |
+| Train support n>=100 | 27,541 | 0.295 | 0.260 | 0.044 | 38.4% | 40.7% | 78.3% |
+| Train support 30..99 | 3,392 | 0.348 | 0.277 | 0.020 | 46.7% | 46.6% | 81.3% |
+| Train support 5..29 | 1,725 | 0.500 | 0.387 | 0.015 | 59.7% | 63.3% | 84.9% |
+| Train support n<5 | 716 | 0.476 | 0.411 | 0.007 | 48.3% | 87.0% | 55.7% |
+
+**Conclusions**
+- Pattern-level history predicts real outcomes about 8x better than a global guess and about 16% better than the complaint-type distribution (value of the descriptor / descriptor_2 labels).
+- The `fast_lookup` threshold (top-1 share >= 0.9 and >= 30 cases) is well calibrated on real future data (93.5% realised vs 96.4% predicted).
+- Patterns with fewer than 5 training tickets are badly over-confident (48% realised vs 87% predicted). This justifies the "low evidence" note and motivates shrinking small-sample shares toward the complaint-type distribution.
+- Even the best case is about 40% top-1, so the system presents likely outcomes with their shares instead of predicting one.
+
+## 7. Live evolution demo (`scripts/demo_evolution.py`, output in `output/demo_evolution.txt`)
+
+| Step | Result |
+|---|---|
+| Initial state, days 1-7 only | 70,967 tickets, 1,153 patterns |
+| 1. Telecom complaint before the class exists | Abstained (top cosine 0.713 < 0.74); nearest shown for a human |
+| 2. Ingest real days 8-9 | 23,707 tickets ingested, many new real classes, 720 patterns refreshed, tier changes reported |
+| 3. Ingest SYNTHETIC "Broadband Service" class (120 fabricated tickets, labelled as demo data) | 2 new patterns, 8 example complaints generated, 7 new resolution templates, 7.4 s |
+| Idempotency | Re-ingesting the same batch: 0 ingested, 120 duplicates skipped |
+| 4. Same telecom complaint after ingestion | Answered as Broadband Service / Intermittent Connection, citing the new telecom resolutions |

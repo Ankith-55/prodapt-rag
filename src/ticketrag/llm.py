@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
 import time
 from pathlib import Path
 
@@ -20,7 +21,8 @@ class LLM:
 
         load_dotenv()
         self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
-        self.client = OpenAI()  # reads OPENAI_API_KEY from the environment
+        # reads OPENAI_API_KEY from the environment; the SDK itself also retries 429/5xx with backoff
+        self.client = OpenAI(max_retries=4, timeout=60.0)
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.usage = {"calls": 0, "cache_hits": 0, "prompt_tokens": 0, "completion_tokens": 0}
@@ -29,7 +31,7 @@ class LLM:
         return hashlib.sha256(json.dumps(parts, sort_keys=True).encode()).hexdigest()
 
     def json(self, system: str, user: str, schema: dict, name: str = "result",
-             temperature: float = 0.0, max_tokens: int = 1000, retries: int = 3) -> dict:
+             temperature: float = 0.0, max_tokens: int = 1000, retries: int = 6) -> dict:
         key = self._key(self.model, system, user, schema, temperature)
         cache_file = self.cache_dir / f"{key}.json"
         if cache_file.exists():
@@ -60,6 +62,6 @@ class LLM:
             except Exception:  # rate limit, transient network error, truncated or invalid JSON
                 if attempt == retries - 1:
                     raise
-                time.sleep(2 ** attempt)
+                time.sleep(min(2 ** attempt, 20) * (0.5 + random.random()))  # exponential backoff with jitter
         cache_file.write_text(json.dumps(out), encoding="utf-8")
         return out

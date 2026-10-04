@@ -28,6 +28,7 @@ ap.add_argument("--k", type=int, default=5)
 ap.add_argument("--gate", type=float, default=0.74)
 ap.add_argument("--seed", type=int, default=1)
 ap.add_argument("--workers", type=int, default=4)
+ap.add_argument("--siblings", type=int, default=0, help="sibling patterns added to rag_core sources (0 = off)")
 ap.add_argument("--judge-model", default="gpt-4.1-mini")
 ap.add_argument("--tag", default="gen_v1")
 a = ap.parse_args()
@@ -42,7 +43,7 @@ sample = pool[: a.n]
 
 llm, judge = LLM(), LLM(model=a.judge_model)
 retriever = PatternRetriever(a.index)
-assistant = Assistant(retriever, llm, gate=a.gate, k=a.k)
+assistant = Assistant(retriever, llm, gate=a.gate, k=a.k, siblings=a.siblings)
 print(f"generator={llm.model} judge={judge.model} n={len(sample)} k={a.k} gate={a.gate}")
 
 

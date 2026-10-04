@@ -1,0 +1,85 @@
+{
+  "tag": "backtest_mar10_12",
+  "train_tickets": 94674,
+  "test_tickets": 33773,
+  "pattern_seen_pct": 98.82,
+  "complaint_type_seen_pct": 99.99,
+  "resolution_template_seen_pct": 99.81,
+  "new_patterns": 132,
+  "overall_seen_patterns": {
+    "n": 33374,
+    "mean_p_pattern": 0.3151,
+    "mean_p_type": 0.2711,
+    "mean_p_global": 0.0396,
+    "top1_acc": 0.4057,
+    "top3_cov": 0.7849,
+    "mean_predicted_top1_share": 0.4344
+  },
+  "by_tier": {
+    "fast_lookup": {
+      "n": 1064,
+      "mean_p_pattern": 0.9052,
+      "mean_p_type": 0.8464,
+      "mean_p_global": 0.0214,
+      "top1_acc": 0.9352,
+      "top3_cov": 0.9746,
+      "mean_predicted_top1_share": 0.9641
+    },
+    "rag_core": {
+      "n": 24315,
+      "mean_p_pattern": 0.2328,
+      "mean_p_type": 0.2102,
+      "mean_p_global": 0.0467,
+      "top1_acc": 0.3249,
+      "top3_cov": 0.7365,
+      "mean_predicted_top1_share": 0.3382
+    },
+    "rag_light": {
+      "n": 7995,
+      "mean_p_pattern": 0.4868,
+      "mean_p_type": 0.3797,
+      "mean_p_global": 0.0205,
+      "top1_acc": 0.581,
+      "top3_cov": 0.9071,
+      "mean_predicted_top1_share": 0.6563
+    }
+  },
+  "by_train_support": {
+    "n>=100": {
+      "n": 27541,
+      "mean_p_pattern": 0.2953,
+      "mean_p_type": 0.2595,
+      "mean_p_global": 0.0444,
+      "top1_acc": 0.3842,
+      "top3_cov": 0.7834,
+      "mean_predicted_top1_share": 0.4067
+    },
+    "30<=n<100": {
+      "n": 3392,
+      "mean_p_pattern": 0.3478,
+      "mean_p_type": 0.277,
+      "mean_p_global": 0.0202,
+      "top1_acc": 0.4673,
+      "top3_cov": 0.8128,
+      "mean_predicted_top1_share": 0.4661
+    },
+    "5<=n<30": {
+      "n": 1725,
+      "mean_p_pattern": 0.5001,
+      "mean_p_type": 0.3867,
+      "mean_p_global": 0.0145,
+      "top1_acc": 0.5971,
+      "top3_cov": 0.8487,
+      "mean_predicted_top1_share": 0.6332
+    },
+    "n<5": {
+      "n": 716,
+      "mean_p_pattern": 0.4759,
+      "mean_p_type": 0.4108,
+      "mean_p_global": 0.0073,
+      "top1_acc": 0.4832,
+      "top3_cov": 0.5573,
+      "mean_predicted_top1_share": 0.8699
+    }
+  }
+}

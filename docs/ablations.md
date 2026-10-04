@@ -54,6 +54,7 @@ No-retrieval baseline (global resolution prior): TV = 0.957
 | Run | LLM | n | k | Gold in top-k | Category: retrieval → LLM | Pattern: retrieval → LLM | LLM picks gold when present | In-domain answered | OOD rejected: cosine / LLM / either |
 |---|---|---|---|---|---|---|---|---|---|
 | parse_small_top5 | gpt-4o-mini | 1000 | 5 | 73.3% | 75.7% → 83.1% | 42.8% → 57.2% | 78.0% | 96.5% | 76.0% / 28.0% / 76.0% |
+| parse_small_top8 | gpt-4o-mini | 1000 | 8 | 80.3% | 75.7% → 84.1% | 42.8% → 57.8% | 72.0% | 96.8% | 76.0% / 40.0% / 80.0% |
 
 ### End-to-end generation / system health (LLM-judged faithfulness, separate judge model)
 
@@ -61,6 +62,7 @@ No-retrieval baseline (global resolution prior): TV = 0.957
 |---|---|---|---|---|---|---|---|---|---|---|
 | gen_v1 | gpt-4o-mini / gpt-4.1-mini | 150 | 97.3% | 79.3% | 55.2% | 82.9% / 5.9% / 11.2% | 28.1% | 7.1 / 11.1 | 66.2% | 6.7% |
 | gen_v2 | gpt-4o-mini / gpt-4.1-mini | 150 | 97.3% | 80.0% | 0.7% | 92.3% / 5.3% / 2.4% | 72.6% | 4.2 / 5.1 | 70.0% | 6.7% |
+| gen_v3 | gpt-4o-mini / gpt-4.1-mini | 150 | 97.3% | 80.0% | 12.6% | 94.2% / 4.1% / 1.7% | 76.7% | 2.8 / 6.1 | 70.0% | 6.7% |
 <!-- ABLATION_TABLES:END -->
 
 ## Decision log
@@ -113,8 +115,22 @@ No-retrieval baseline (global resolution prior): TV = 0.957
 - **Finding from reading samples:** small-sample patterns have unreliable statistics (a newsstand pattern showed median = p90 = 1062 hours), so a "low evidence" policy note is now added when a pattern has fewer than 30 closed tickets.
 - **Decision:** adopt v2. The largest gain came from removing a conflict between the prompt (empathy step) and the validator (every step cited), and from moving table facts (outcomes, durations) out of the LLM into code. Known limitation: complaints about private companies (roaming charges, airlines) still match "Consumer Complaint" patterns; 30% of 80 outside-311 queries were answered. Mitigation is presentation (matched category + citations shown to the agent) and human routing, not a stricter gate.
 
+### A7. Candidates shown to the parser: k = 5 vs 8 (2026-10-04) — provisional, confounded
+- **Setup:** same 1,000 sampled eval queries and 25 OOD queries. k=5 report `parse/parse_small_top5.json` used the original parse prompt; k=8 report `parse/parse_small_top8.json` used the current prompt with private-company scope guidance (added during A8). Prompt and k therefore differ between the two runs.
+- **Result (k=5 → k=8):** gold in candidate list 73.3% → 80.3%; LLM category 83.1% → 84.1%; LLM exact pattern 57.2% → 57.8%; LLM picks gold when present 78.0% → 72.0%; false "none" 1.2% → 0.8%; OOD rejected by the LLM 28% → 40%, by either gate 76% → 80%; prompt tokens per uncached call about 580 → 750 (+28%).
+- **Reading:** more candidates raise the ceiling by 7 points but accuracy only by about 1 point because more distractors lower the pick rate. The OOD improvement is most likely the scope guidance, not k.
+- **Decision:** pending A7b (k=5 with the current prompt). Default stays k=5. Run also surfaced the OpenAI 429 (200k tokens/min): LLM wrapper now backs off with jitter and eval workers default to 4.
+
+### A9. Generator v3: no siblings + future-tense guard + outcomes remainder (2026-10-04)
+- **Setup:** `eval_generation.py --n 150 --tag gen_v3 --siblings 0` vs `gen_v2` (which added 2 sibling patterns to rag_core sources). v3 bundles three changes: (1) siblings off, (2) validator rejects "will / going to" predictions, (3) outcomes list ends with an "Other recorded resolutions" line so shares sum to 100%. Same 150 queries, same judge (gpt-4.1-mini). Report `eval/reports/generation/gen_v3.json`.
+- **Motivation:** reading real answers showed sibling patterns pulling unrelated resolution texts into the sources (a DCWP form-closure text in a parking answer), and a step predicting "the NYPD will respond" despite the prompt forbidding predictions.
+- **Result (v2 -> v3):** claims supported 92.3% -> 94.2%, partial 5.3% -> 4.1%, unsupported 2.4% -> 1.7%; answers fully supported 72.6% -> 76.7%; validator first-attempt violations 0.7% -> 12.6% (retries), remaining after retry 0.7% -> 8.4%; answered 97.3%, category accuracy 80.0% and OOD abstention 70.0% unchanged; no template fallbacks; only 7 answers fell to 2 steps.
+- **Caveat:** p50 latency 4.2 s -> 2.8 s is mostly a cache artifact (identical parse calls reused). Generation stage is about 3.0-3.2 s in both; real latency is 4-5 s.
+- **Remaining unsupported (11 claims):** generic "file a new request" advice not stated in a source, and a median/p90 pair that are nearly equal (batch-closed pattern) which the judge flagged.
+- **Decision:** adopt v3. The guard turns a soft prompt rule into a hard check at the price of retries on about 1 in 8 answers. Siblings stay off by default (`TICKETRAG_SIBLINGS`, `--siblings` to re-enable).
+
 ## Open / planned ablations
-- A7: candidates shown to the parser, k = 5 vs 8 vs 10 (`eval_parse.py --k`).
+- A7b: rerun k=5 with the current (scope-guidance) parse prompt (`--tag parse_small_top5_v2`) to remove the prompt confound in A7.
 - Siblings in rag_core context: with vs without (the heat example pulled in an irrelevant "No Cold Water" sibling).
 - Runtime judge-in-the-loop vs validator only.
 - Split the OOD set (truly outside 311 vs borderline) and recompute abstention for both gates.
