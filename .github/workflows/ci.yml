@@ -147,19 +147,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Image vulnerability scan, critical findings with a fix block the build
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ticketrag:ci
-          severity: CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
+        run: |
+          # Trivy runs as a container against the image in the local Docker daemon. Pin a version tag once a baseline is agreed.
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image             --severity CRITICAL --ignore-unfixed --exit-code 1 ticketrag:ci
       - name: Image vulnerability scan, high findings (report only)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ticketrag:ci
-          severity: HIGH
-          ignore-unfixed: true
-          exit-code: "0"
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image             --severity HIGH --ignore-unfixed --exit-code 0 ticketrag:ci
       - uses: actions/download-artifact@v4
         with:
           name: fixture_state
