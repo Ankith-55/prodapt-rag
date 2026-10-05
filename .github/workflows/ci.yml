@@ -153,7 +153,7 @@ jobs:
       - name: Image vulnerability scan, high findings (report only)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image             --severity HIGH --ignore-unfixed --exit-code 0 ticketrag:ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: fixture_state
           path: fixture_state
