@@ -61,9 +61,13 @@ button { font: inherit; }
 
 /* layout */
 .layout {
-  display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 1.5rem;
-  max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem 3.5rem;
+  display: grid; grid-template-columns: clamp(360px, 28vw, 500px) minmax(0, 1fr); gap: 1.75rem;
+  max-width: 1760px; margin: 0 auto; padding: 1.5rem 2rem 3.5rem;
 }
+/* keep the header content on the same left/right edges as the page content on very wide screens */
+.bar { padding-inline: max(2rem, calc((100vw - 1760px) / 2 + 2rem)); }
+/* long prose stays readable on wide screens; the triage grid, bars and sources still use the full width */
+.opening, .summary, .steps { max-width: 84ch; }
 @media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 1rem 16px 2.5rem; } }
 
 /* cards: a filed-document look, with a ruled heading */
