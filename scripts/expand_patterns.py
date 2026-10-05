@@ -13,6 +13,7 @@ import pandas as pd
 from ticketrag import runlog
 from ticketrag.examples import STYLES, generate_complaints
 from ticketrag.llm import LLM
+from ticketrag.paths import default_state_dir
 from ticketrag.retrieve import pattern_text
 
 ap = argparse.ArgumentParser()
@@ -20,7 +21,7 @@ ap.add_argument("--role", choices=STYLES, required=True)
 ap.add_argument("--n", type=int, default=4, help="complaints per pattern")
 ap.add_argument("--limit", type=int, default=0, help="only the first N patterns (0 = all)")
 ap.add_argument("--workers", type=int, default=8)
-ap.add_argument("--patterns", default="data/processed/patterns.parquet")
+ap.add_argument("--patterns", default=str(default_state_dir() / "patterns.parquet"))
 ap.add_argument("--suffix", default="", help="output name suffix, e.g. _n8 for an ablation set")
 a = ap.parse_args()
 

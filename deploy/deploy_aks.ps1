@@ -43,8 +43,9 @@ Write-Host "3/7 stage the ticket state and build the state image"
 $stage = "deploy/aks-build/state"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory $stage | Out-Null
-Copy-Item data/processed/patterns.parquet, data/processed/resolutions.parquet, data/processed/tickets.parquet $stage
-Copy-Item data/processed/index "$stage/index" -Recurse
+$src = if (Test-Path data/processed/patterns.parquet) { "data/processed" } else { "artifacts/state" }
+Copy-Item "$src/patterns.parquet", "$src/resolutions.parquet", "$src/tickets.parquet" $stage
+Copy-Item "$src/index" "$stage/index" -Recurse
 Run { docker build -f deploy/aks-build/Dockerfile --build-arg BASE="$server/ticketrag:$Tag" -t "$server/ticketrag-demo:$Tag" deploy/aks-build } "build state image" 1
 Run { docker push "$server/ticketrag-demo:$Tag" } "push state image"
 

@@ -14,10 +14,11 @@ import numpy as np
 import pandas as pd
 
 from ticketrag import runlog
+from ticketrag.paths import default_state_dir
 from ticketrag.patterns import clean_tickets
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--state", default="data/processed")
+ap.add_argument("--state", default=str(default_state_dir()))
 ap.add_argument("--csv", required=True)
 ap.add_argument("--tag", required=True)
 a = ap.parse_args()

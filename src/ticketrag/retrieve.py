@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from ticketrag.embed import Embedder
+from ticketrag.paths import default_state_dir
 from ticketrag.store import VectorStore
 
 SLOT_BITS = 4
@@ -54,10 +55,11 @@ class Hit:
 
 
 class PatternRetriever:
-    def __init__(self, index_dir: str | Path = "data/processed/index",
-                 processed_dir: str | Path = "data/processed", embedder: Embedder | None = None,
+    def __init__(self, index_dir: str | Path | None = None,
+                 processed_dir: str | Path | None = None, embedder: Embedder | None = None,
                  support_weight: float = 0.0, min_cases: int = 0):
-        self.index_dir, self.processed_dir = Path(index_dir), Path(processed_dir)
+        self.processed_dir = Path(processed_dir) if processed_dir else default_state_dir()
+        self.index_dir = Path(index_dir) if index_dir else self.processed_dir / "index"
         self.support_weight, self.min_cases = support_weight, min_cases
         store, patterns, resolution_text = self._load()
         model_name = store.meta["model_name"]

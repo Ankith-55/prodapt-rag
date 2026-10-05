@@ -12,11 +12,12 @@ from pathlib import Path
 from ticketrag import runlog
 from ticketrag.llm import LLM
 from ticketrag.parse import candidate_label, parse_complaint
+from ticketrag.paths import examples_file
 from ticketrag.retrieve import PatternRetriever, pid_to_int
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--index", default="data/processed/index")
-ap.add_argument("--eval-file", default="data/processed/pattern_examples_eval.jsonl")
+ap.add_argument("--index", default=None, help="index dir (default: <state>/index)")
+ap.add_argument("--eval-file", default=str(examples_file("eval")))
 ap.add_argument("--ood-file", default="eval/ood_queries.txt")
 ap.add_argument("--n", type=int, default=1000)
 ap.add_argument("--k", type=int, default=5, help="candidates shown to the LLM")

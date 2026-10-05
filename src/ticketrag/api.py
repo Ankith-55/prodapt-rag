@@ -2,7 +2,7 @@
 
   uvicorn ticketrag.api:app --host 0.0.0.0 --port 8000
 
-Config (environment): TICKETRAG_STATE (default data/processed), TICKETRAG_INDEX (default <state>/index),
+Config (environment): TICKETRAG_STATE (default data/processed if built, else artifacts/state), TICKETRAG_INDEX (default <state>/index),
 TICKETRAG_GATE (0.74), TICKETRAG_K (5), TICKETRAG_API_KEY (if set, /ask /ingest /reload require X-API-Key),
 OPENAI_API_KEY, OPENAI_MODEL.
 
@@ -40,6 +40,7 @@ from prometheus_client import (
 from pydantic import BaseModel, Field
 
 from ticketrag.ingest import apply_batch
+from ticketrag.paths import default_state_dir
 from ticketrag.pipeline import Answer, Assistant
 
 log = logging.getLogger("ticketrag")
@@ -118,7 +119,7 @@ def _build_assistant() -> Assistant:
     from ticketrag.llm import LLM
     from ticketrag.retrieve import PatternRetriever
 
-    state = os.getenv("TICKETRAG_STATE", "data/processed")
+    state = str(default_state_dir())
     index = os.getenv("TICKETRAG_INDEX", f"{state}/index")
     retriever = PatternRetriever(index, state)
     return Assistant(retriever, LLM(), gate=float(os.getenv("TICKETRAG_GATE", "0.74")),

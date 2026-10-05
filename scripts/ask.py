@@ -18,7 +18,7 @@ DEMO = [
 
 ap = argparse.ArgumentParser()
 ap.add_argument("complaint", nargs="*")
-ap.add_argument("--index", default="data/processed/index")
+ap.add_argument("--index", default=None, help="index dir (default: <state>/index)")
 ap.add_argument("--gate", type=float, default=0.74)
 a = ap.parse_args()
 runlog.start("ask")

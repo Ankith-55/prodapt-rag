@@ -9,11 +9,12 @@ from pathlib import Path
 import numpy as np
 
 from ticketrag import runlog
+from ticketrag.paths import examples_file
 from ticketrag.retrieve import PatternRetriever, pid_to_int
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--index", default="data/processed/index")
-ap.add_argument("--eval-file", default="data/processed/pattern_examples_eval.jsonl")
+ap.add_argument("--index", default=None, help="index dir (default: <state>/index)")
+ap.add_argument("--eval-file", default=str(examples_file("eval")))
 ap.add_argument("--ood-file", default="eval/ood_queries.txt")
 ap.add_argument("--tag", default="default")
 ap.add_argument("--alphas", default="0,0.01,0.02,0.04", help="support-prior weights to compare")

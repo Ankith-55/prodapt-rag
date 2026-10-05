@@ -1,0 +1,9 @@
+{
+  "model_name": "BAAI/bge-small-en-v1.5",
+  "built_at": "2026-10-03T12:52:49+00:00",
+  "doc_format": "label + synthetic example complaints",
+  "patterns": 1266,
+  "example_vectors": 5064,
+  "dim": 384,
+  "n": 6330
+}

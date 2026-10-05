@@ -1,5 +1,5 @@
 # Local run: docker compose up --build   (then open http://localhost:8000/)
-# Needs a .env file with OPENAI_API_KEY and a built state in ./data/processed
+# Needs a .env file with OPENAI_API_KEY; serves the committed ready-to-run state in ./artifacts/state
 services:
   ticketrag:
     build: .
@@ -10,5 +10,5 @@ services:
     environment:
       TICKETRAG_STATE: /data/state
     volumes:
-      - ./data/processed:/data/state
+      - ./artifacts/state:/data/state
     restart: unless-stopped

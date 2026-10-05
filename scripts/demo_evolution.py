@@ -17,6 +17,7 @@ from ticketrag import runlog
 from ticketrag.embed import Embedder
 from ticketrag.ingest import apply_batch, init_state
 from ticketrag.llm import LLM
+from ticketrag.paths import examples_file
 from ticketrag.patterns import clean_tickets
 from ticketrag.pipeline import Assistant
 from ticketrag.retrieve import PatternRetriever
@@ -87,7 +88,7 @@ print(f"base: {len(base)} tickets before {a.cutoff} | real delta: {len(delta)} r
 if Path(a.state).exists():
     shutil.rmtree(a.state)
 embedder, llm = Embedder(), LLM()
-print("initial state:", init_state(base, a.state, embedder, "data/processed/pattern_examples_index.jsonl"))
+print("initial state:", init_state(base, a.state, embedder, examples_file("index")))
 retriever = PatternRetriever(Path(a.state) / "index", a.state, embedder=embedder)
 assistant = Assistant(retriever, llm)
 

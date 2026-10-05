@@ -15,12 +15,13 @@ import numpy as np
 from ticketrag import runlog
 from ticketrag.judge import judge_answer
 from ticketrag.llm import LLM
+from ticketrag.paths import examples_file
 from ticketrag.pipeline import Assistant
 from ticketrag.retrieve import PatternRetriever, pid_to_int
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--index", default="data/processed/index")
-ap.add_argument("--eval-file", default="data/processed/pattern_examples_eval.jsonl")
+ap.add_argument("--index", default=None, help="index dir (default: <state>/index)")
+ap.add_argument("--eval-file", default=str(examples_file("eval")))
 ap.add_argument("--ood-outside", default="eval/ood_outside.txt")
 ap.add_argument("--ood-borderline", default="eval/ood_borderline.txt")
 ap.add_argument("--n", type=int, default=150)

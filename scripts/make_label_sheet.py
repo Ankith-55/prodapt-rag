@@ -3,9 +3,10 @@ Label them yourself WITHOUT looking at the model's answers, then we compare."""
 import csv
 import json
 import random
-from pathlib import Path
 
-rows = [json.loads(line) for line in Path("data/processed/pattern_examples_eval.jsonl").read_text(encoding="utf-8").splitlines()]
+from ticketrag.paths import examples_file
+
+rows = [json.loads(line) for line in examples_file("eval").read_text(encoding="utf-8").splitlines()]
 pool = [c for r in rows for c in r["complaints"]]
 random.Random(7).shuffle(pool)
 with open("eval/handlabel.csv", "w", newline="", encoding="utf-8") as f:

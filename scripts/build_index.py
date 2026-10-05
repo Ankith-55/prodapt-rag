@@ -14,12 +14,13 @@ import pandas as pd
 
 from ticketrag import runlog
 from ticketrag.embed import DEFAULT_MODEL, Embedder
+from ticketrag.paths import default_state_dir, examples_file
 from ticketrag.retrieve import SLOTS, pattern_text, vec_id
 from ticketrag.store import VectorStore
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--patterns", default="data/processed/patterns.parquet")
-ap.add_argument("--examples", default="data/processed/pattern_examples_index.jsonl")
+ap.add_argument("--patterns", default=str(default_state_dir() / "patterns.parquet"))
+ap.add_argument("--examples", default=str(examples_file("index")))
 ap.add_argument("--no-examples", action="store_true")
 ap.add_argument("--out", default="data/processed/index")
 ap.add_argument("--model", default=DEFAULT_MODEL)
