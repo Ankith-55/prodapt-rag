@@ -95,7 +95,7 @@ jobs:
           pip install --no-deps -e .
       - name: Tests with a coverage floor (stub LLM and fake embedder, so no secrets and no downloads)
         run: pytest -q --cov=ticketrag --cov-report=term-missing --cov-report=xml --cov-fail-under=80
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.xml
@@ -123,7 +123,7 @@ jobs:
           pip install --no-deps -e .
       - name: Build a tiny fixture state and fail the build if retrieval returns the wrong pattern
         run: python scripts/make_fixture_state.py --out fixture_state --check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: fixture_state
           path: fixture_state
