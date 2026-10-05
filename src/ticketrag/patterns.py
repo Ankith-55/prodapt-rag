@@ -12,7 +12,7 @@ _MISSING = {"", "n/a", "na", "nan", "none", "null"}
 
 
 def _hash(*parts: str) -> str:
-    return hashlib.sha1("\x1f".join(parts).encode()).hexdigest()[:10]
+    return hashlib.sha1("\x1f".join(parts).encode(), usedforsecurity=False).hexdigest()[:10]  # identity hash, not security
 
 
 def fix_mojibake(text: str) -> str:

@@ -11,37 +11,40 @@
     <div class="brand">
       <span class="mark" aria-hidden="true"></span>
       <h1>Resolution Assistant</h1>
-      <span class="sub">support desk</span>
+      <span class="sub">Support desk &middot; evidence-cited guidance</span>
     </div>
     <div id="status" class="status" role="status">connecting</div>
   </header>
 
   <main class="layout">
-    <section class="input-col" aria-label="Complaint input">
-      <label for="complaint" class="field-label">Customer complaint</label>
-      <textarea id="complaint" rows="9" maxlength="2000"
-        placeholder="Paste the customer's message exactly as written."></textarea>
-      <div class="row">
-        <span id="count" class="muted">0 / 2000</span>
-        <button id="ask" class="primary" type="button">Find resolution</button>
+    <section class="input-col" aria-label="Case intake">
+      <div class="intake">
+        <h2 class="col-title">Case intake</h2>
+        <label for="complaint" class="field-label">Customer complaint</label>
+        <textarea id="complaint" rows="9" maxlength="2000"
+          placeholder="Paste the customer's message exactly as written."></textarea>
+        <div class="row">
+          <span id="count" class="muted">0 / 2000</span>
+          <button id="ask" class="primary" type="button">Find resolution</button>
+        </div>
+        <p class="hint">Ctrl + Enter to submit. Complaint text is analysed by the service and is not written to its logs.</p>
+
+        <h2 class="col-title">Examples</h2>
+        <ul id="examples" class="chips-list"></ul>
+
+        <h2 class="col-title">This session</h2>
+        <ul id="recent" class="recent"><li class="muted">Nothing asked yet.</li></ul>
+
+        <details class="advanced">
+          <summary>Access key</summary>
+          <input id="apikey" type="password" autocomplete="off" placeholder="X-API-Key, only if the server requires one">
+        </details>
       </div>
-      <p class="hint">Ctrl + Enter to submit. Text is sent to the service for analysis and is not stored in the logs.</p>
-
-      <h2 class="col-title">Examples</h2>
-      <ul id="examples" class="chips-list"></ul>
-
-      <h2 class="col-title">This session</h2>
-      <ul id="recent" class="recent"><li class="muted">Nothing asked yet.</li></ul>
-
-      <details class="advanced">
-        <summary>Access key</summary>
-        <input id="apikey" type="password" autocomplete="off" placeholder="X-API-Key, only if the server requires one">
-      </details>
     </section>
 
     <section class="result-col" id="result" aria-live="polite" aria-label="Result">
       <div class="empty">
-        <p class="empty-title">Paste a complaint to begin.</p>
+        <p class="empty-title">Paste a complaint to open a case.</p>
         <p class="muted">The assistant matches it against past resolved tickets, then drafts guidance for the agent. Every statement cites the ticket history it came from.</p>
       </div>
     </section>

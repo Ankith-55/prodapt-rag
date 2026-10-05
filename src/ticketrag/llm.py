@@ -67,6 +67,6 @@ class LLM:
             except Exception:  # rate limit, transient network error, truncated or invalid JSON
                 if attempt == retries - 1:
                     raise
-                time.sleep(min(2 ** attempt, 20) * (0.5 + random.random()))  # exponential backoff with jitter
+                time.sleep(min(2 ** attempt, 20) * (0.5 + random.random()))  # nosec B311 - backoff jitter, not security
         cache_file.write_text(json.dumps(out), encoding="utf-8")
         return out

@@ -1,5 +1,10 @@
 name: ci
 
+# Five stages. Stages 1 and 2 run in parallel; 3 needs 1; 4 needs 2 and 3; 5 (publish) needs 4 and runs on main only.
+#
+#   1 Quality ──► 3 Test ──┐
+#   2 Security ────────────┴─► 4 Build and verify ──► 5 Publish (main only)
+
 on:
   push:
     branches: [main]
@@ -13,15 +18,74 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  PYTHON_VERSION: "3.11"
+
 jobs:
-  lint-test:
+  # ---------------------------------------------------------------- 1. QUALITY
+  quality:
+    name: "1 - Quality (lint, Dockerfile, manifests)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Python lint (ruff, rule set pinned in pyproject.toml)
+        run: |
+          pip install ruff
+          ruff check src tests scripts
+      - name: Dockerfile lint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+      - name: Kubernetes manifests validate against the API schemas
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          ./kubeconform -strict -summary -ignore-missing-schemas deploy/k8s/*.yaml
+
+  # --------------------------------------------------------------- 2. SECURITY
+  security:
+    name: "2 - Security (secrets, static analysis, dependencies)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0              # gitleaks scans the whole history, not just the tip
+      - name: Secret scan (blocking)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Static security analysis (bandit, medium severity and above, blocking)
+        run: |
+          pip install bandit
+          bandit -r src -ll
+      - name: Dependency vulnerability audit (advisory until the baseline is triaged)
+        continue-on-error: true
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt pip-audit
+          pip-audit --skip-editable
+
+  # ------------------------------------------------------------------ 3. TEST
+  unit:
+    name: "3a - Test (unit, ingestion, pipeline, API)"
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements*.txt
       - name: Install (CPU-only torch keeps the install small and fast)
@@ -29,20 +93,23 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-dev.txt
           pip install --no-deps -e .
-      - name: Lint
-        run: ruff check src tests scripts
-      - name: Unit and API tests (stub LLM and fake embedder, so no secrets and no downloads)
-        run: pytest -q --cov=ticketrag --cov-report=term-missing
+      - name: Tests with a coverage floor (stub LLM and fake embedder, so no secrets and no downloads)
+        run: pytest -q --cov=ticketrag --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
 
-  container-smoke:
-    needs: lint-test
+  retrieval-gate:
+    name: "3b - Test (retrieval gate with the real embedder)"
+    needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements*.txt
       - uses: actions/cache@v4
@@ -54,21 +121,61 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
           pip install --no-deps -e .
-      - name: Retrieval gate (real embedder on a tiny fixture; fails the build if retrieval regresses)
-        run: python scripts/make_fixture_state.py --out "$RUNNER_TEMP/fixture_state" --check
+      - name: Build a tiny fixture state and fail the build if retrieval returns the wrong pattern
+        run: python scripts/make_fixture_state.py --out fixture_state --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixture_state
+          path: fixture_state
+
+  # -------------------------------------------------------- 4. BUILD AND VERIFY
+  build:
+    name: "4 - Build and verify (image, vulnerability scan, container smoke test)"
+    needs: [security, unit, retrieval-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
       - name: Build image
-        run: docker build -t ticketrag:ci .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ticketrag:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Image vulnerability scan, critical findings with a fix block the build
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ticketrag:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Image vulnerability scan, high findings (report only)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ticketrag:ci
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+      - uses: actions/download-artifact@v4
+        with:
+          name: fixture_state
+          path: fixture_state
       - name: Run the container and exercise it
         run: |
           # A dummy key on purpose: the LLM call fails, which also proves the degraded (statistics-only) path in the container.
           docker run -d --name tr -p 8000:8000 -e OPENAI_API_KEY=sk-dummy -e TICKETRAG_GATE=0.5 \
-            -v "$RUNNER_TEMP/fixture_state:/data/state" ticketrag:ci
+            -v "$PWD/fixture_state:/data/state" ticketrag:ci
           for i in $(seq 1 90); do curl -sf localhost:8000/ready && break; sleep 2; done
           curl -sf localhost:8000/ready
           curl -sf localhost:8000/health
+          curl -sf localhost:8000/ | grep -q "Resolution Assistant"
           curl -sf -X POST localhost:8000/ask -H 'Content-Type: application/json' \
             -d '{"complaint": "loud music and a party next door at night"}' | tee ask.json
-          python - <<'PY'
+          python3 - <<'PY'
           import json
           body = json.load(open("ask.json"))
           assert not body["abstained"], body
@@ -81,8 +188,10 @@ jobs:
         if: failure()
         run: docker logs tr
 
+  # ------------------------------------------------------------- 5. PUBLISH
   publish:
-    needs: container-smoke
+    name: "5 - Publish (signed-off image to the registry, main only)"
+    needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -91,7 +200,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Image name (GHCR requires lowercase)
+      - name: Image name (the registry requires lowercase)
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -99,15 +208,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - name: Push (with build provenance and an SBOM attached)
+        id: push
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          provenance: true
+          sbom: true
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
-# Deployment to AKS is deliberately not automated here: the cluster image bundles pre-built ticket state, which is
-# not in the repository. Use deploy/deploy_aks.ps1 (see docs/production_scale.md). In production the state would come
-# from object storage and a deploy job would only roll the image tag.
+      - name: Summary
+        run: |
+          echo "Published \`${IMAGE}:${GITHUB_SHA}\` (digest \`${{ steps.push.outputs.digest }}\`)" >> "$GITHUB_STEP_SUMMARY"
+
+# Cluster deployment is deliberately not automated here: the demo image bundles pre-built ticket state. Use
+# deploy/deploy_aks.ps1 (see docs/production_scale.md). In production a deploy job would roll an image tag and a state version.

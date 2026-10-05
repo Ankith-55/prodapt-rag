@@ -184,7 +184,7 @@ def create_app(assistant: Assistant | None = None) -> FastAPI:
             raise HTTPException(500, "internal error") from None
         metrics.record(result)
         log.info(json.dumps({
-            "event": "ask", "request_id": rid, "complaint_sha1": hashlib.sha1(complaint.encode()).hexdigest()[:10],
+            "event": "ask", "request_id": rid, "complaint_sha1": hashlib.sha1(complaint.encode(), usedforsecurity=False).hexdigest()[:10],
             "complaint_chars": len(complaint), "abstained": result.abstained, "reason": result.abstain_reason,
             "tier": result.tier, "method": result.method, "severity": result.severity, "top_score": round(result.top_score, 3),
             "latency_ms": round((time.perf_counter() - t0) * 1000), "tokens": result.llm_usage.get("prompt_tokens", 0)

@@ -16,7 +16,7 @@ dependencies = { file = ["requirements.txt"] }
 where = ["src"]
 
 [tool.setuptools.package-data]
-ticketrag = ["static/*"]
+ticketrag = ["static/*", "static/fonts/*"]
 
 [tool.ruff]
 line-length = 110

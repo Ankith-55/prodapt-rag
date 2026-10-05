@@ -10,7 +10,7 @@ Honest status first, design after.
 | Stateless API (`/ask`, `/ingest`, `/reload`, `/health`, `/ready`, `/metrics`) | Built, 48 tests | `tests/` |
 | Container image (CPU-only torch, model baked in, non-root, health check) | Built, ran locally with Docker Compose | `Dockerfile`, `docker-compose.yml` |
 | Kubernetes deployment on AKS (probes, limits, HPA, secret, private registry) | **Deployed and verified**: pod 1/1 Running, probes 200, HPA active, request authenticated and answered | `docs/evidence/aks_proof.txt`, `aks_logs.txt` |
-| CI/CD (lint, tests, retrieval gate, container smoke test, publish image) | Written, **not yet run on GitHub** | `.github/workflows/ci.yml` |
+| CI/CD, five stages (quality, security, test, build and verify, publish) | Written; scanners and tests verified locally, **pipeline not yet run on GitHub** | `.github/workflows/ci.yml` |
 | Metrics and structured logs | Built, `/metrics` live | `src/ticketrag/api.py` |
 | Alerting and dashboards | Rules designed below, **not deployed** | section 6 |
 | Shared vector store, async ingestion, semantic cache, real auth, PII redaction | **Designed only** | sections 3 to 5 |
@@ -88,7 +88,26 @@ Logs are one JSON line per request with a request ID, a SHA-1 prefix and length 
 
 ## 7. Delivery pipeline (CI/CD)
 
-`.github/workflows/ci.yml`: lint and tests on every push and PR (stub LLM, no secrets); a retrieval gate with the real embedder on a tiny fixture; a container smoke test that runs the built image with a dummy LLM key and asserts the degraded path works; publish of the image to GitHub Container Registry on `main`. Cluster deployment stays a manual script (`deploy/deploy_aks.ps1`) because the demo image bundles local state; in production a deploy job would roll an image tag and a state version. Rollback: `kubectl rollout undo` for the image; previous state version for data.
+`.github/workflows/ci.yml` is a five-stage pipeline (stages 1 and 2 run in parallel; 3 needs 1; 4 needs 2 and 3; 5 needs 4):
+
+```
+1 Quality ──► 3 Test ──┐
+2 Security ────────────┴─► 4 Build and verify ──► 5 Publish (main only)
+```
+
+| Stage | Checks | Blocks the build? |
+|---|---|---|
+| 1 Quality | `ruff` (pinned rule set), Dockerfile lint (hadolint), Kubernetes manifests validated against API schemas (kubeconform) | yes |
+| 2 Security | secret scan over the full git history (gitleaks), static analysis (bandit, medium and above), dependency audit (pip-audit) | gitleaks and bandit block; pip-audit is advisory until its baseline is triaged |
+| 3 Test | 3a: 48 unit, ingestion, pipeline and API tests with a stub LLM and fake embedder (no secrets, no downloads), coverage floor 80% (measured 84%); 3b: retrieval gate, the real bge-small embedder on a tiny fixture must return the right pattern | yes |
+| 4 Build and verify | build the image; Trivy scan (critical findings with a fix block, high findings reported); run the container with a dummy LLM key and assert `/ready`, `/health`, the UI page, and that `/ask` answers in degraded mode (proving the fallback inside the real container) | yes |
+| 5 Publish | push to GitHub Container Registry tagged with the commit SHA and `latest`, with build provenance and an SBOM attached | main only |
+
+Dependabot proposes weekly updates for Python packages, the base image and the Actions themselves. Recommended repository
+settings once the pipeline is green: require stages 1 to 4 on pull requests before merging to `main`.
+
+Cluster deployment stays a manual script (`deploy/deploy_aks.ps1`) because the demo image bundles local state; in production a
+deploy job would roll an image tag and a state version. Rollback: `kubectl rollout undo` for the image; previous state version for data.
 
 ## 8. Failure modes and handling
 
