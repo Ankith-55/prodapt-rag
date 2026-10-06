@@ -25,9 +25,6 @@ has no customer prose, and checked against 33,773 real later tickets (see *Check
 
 ## Live demo
 https://github.com/user-attachments/assets/bb1e64f7-66a0-4f0b-a10f-5a53260f6439
-> **VIDEO_LINK:** `[Watch the demo (about 90 seconds)](PASTE_LINK_HERE)`
-
-> **Screenshot placeholder 1 (hero GIF, under 5 MB):** paste the heating complaint, the triage strip and cited steps appear, click a citation chip and its source highlights. Save as `docs/img/hero.gif`.
 
 ## Architecture
 
@@ -187,17 +184,3 @@ python scripts/run_eval.py --tag mine
 How to give input and read the output: [`docs/testing_guide.md`](docs/testing_guide.md).
 
 </details>
-
-## Repository layout
-
-```
-src/ticketrag/   patterns, retrieve, store, parse, generate (+validator), judge, pipeline, ingest, api, static UI
-scripts/         data fetch, index build, ingestion, evals, ablation table, demos
-tests/           stub LLM + fake embedder; unit, ingestion, pipeline and API tests
-artifacts/       committed ready-to-run state and generated example complaints
-eval/            reports (JSON) and out-of-domain query sets
-docs/            architecture, how it works, ablations, evolving data, production scale, rubric pages
-deploy/          Kubernetes manifests, AKS deploy script
-.github/         five-stage CI/CD workflow, Dependabot
-EDA/             notebooks: dataset selection and next-days ingestion check
-```
