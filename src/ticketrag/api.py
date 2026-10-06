@@ -168,7 +168,8 @@ def create_app(assistant: Assistant | None = None) -> FastAPI:
     def ready() -> dict:
         a = get_assistant()
         return {"status": "ready", "patterns": len(a.retriever.patterns), "vectors": len(a.retriever.store),
-                "embedder": a.retriever.embedder.model_name, "llm": a.llm.model, "gate": a.gate}
+                "embedder": a.retriever.embedder.model_name, "llm": a.llm.model, "gate": a.gate,
+                "auth_required": bool(api_key)}
 
     @app.post("/ask", response_model=AskResponse, dependencies=[Depends(require_key)])
     def ask(req: AskRequest, response: Response, x_request_id: str | None = Header(default=None)) -> AskResponse:

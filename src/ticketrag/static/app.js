@@ -41,6 +41,7 @@
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       state.gate = d.gate;
+      ui.keyBox.hidden = !d.auth_required;  // only ask for a key when the server enforces one
       ui.status.className = 'status ok';
       ui.status.textContent = `${d.patterns.toLocaleString()} ticket types · ${d.vectors.toLocaleString()} vectors · ${d.embedder.split('/').pop()} · ${d.llm}`;
     } catch (e) {
@@ -93,7 +94,7 @@
       const headers = { 'Content-Type': 'application/json' };
       if (ui.key.value) headers['X-API-Key'] = ui.key.value;
       const r = await fetch('/ask', { method: 'POST', headers, body: JSON.stringify({ complaint: text }) });
-      if (r.status === 401) { ui.keyBox.open = true; ui.key.focus(); throw new Error('The server requires an access key. Enter it under "Access key".'); }
+      if (r.status === 401) { ui.keyBox.hidden = false; ui.keyBox.open = true; ui.key.focus(); throw new Error('The server requires an access key. Enter it under "Access key".'); }
       if (!r.ok) {
         let detail = `Request failed (${r.status}).`;
         try { const j = await r.json(); if (typeof j.detail === 'string') detail = j.detail; } catch (_) { /* keep default */ }

@@ -14,6 +14,7 @@ def test_health_and_ready(client):
     assert client.get("/health").json() == {"status": "ok"}
     body = client.get("/ready").json()
     assert body["status"] == "ready" and body["patterns"] == 3 and body["llm"] == "stub"
+    assert body["auth_required"] is False
 
 
 def test_ask_returns_answer_and_never_echoes_the_complaint(client):
@@ -43,6 +44,8 @@ def test_api_key_is_enforced_when_configured(assistant, monkeypatch):
     assert c.post("/ask", json=payload, headers={"X-API-Key": "wrong"}).status_code == 401
     assert c.post("/ask", json=payload, headers={"X-API-Key": "secret"}).status_code == 200
     assert c.get("/health").status_code == 200  # probes stay open
+    ready = c.get("/ready").json()
+    assert ready["auth_required"] is True and "secret" not in str(ready)  # reports that a key is needed, never the key
 
 
 def test_llm_outage_returns_degraded_answer_not_500(client, stub):
