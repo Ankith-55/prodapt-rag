@@ -88,8 +88,21 @@ flowchart LR
 - **Five-stage CI/CD.** Quality, security, test, build and verify, publish: ruff, hadolint, kubeconform, gitleaks, bandit, Trivy, a retrieval gate with the real embedder, and a container smoke test.
 - **Measured, not guessed.** 4 to 5 s and about $0.0005 per answer, a capacity model, and a written scaling path for what breaks first (the in-process index, ingestion, baked-in state).
 
-> **Screenshot placeholder 3 (pipeline):** the GitHub Actions run with all five stages green. Save as `docs/img/ci.png`.
-> **Screenshot placeholder 4 (Kubernetes):** `kubectl get pods,svc,hpa,deploy` showing `1/1 Running` and the autoscaler. Save as `docs/img/aks.png`.
+![Docker: the container starts, docker ps reports it healthy, and the image size](docs/img/docker-status.png)
+
+*Docker: `docker compose up` starts the container, `docker ps` reports it healthy on port 8000, and the image is 2.88 GB on disk (688 MB of content).*
+
+![Docker Desktop: the ticketrag container running on port 8000](docs/img/docker-desktop.png)
+
+*Docker Desktop: the `ticketrag` container running on port 8000, using about 453 MB of memory and 0.25% CPU at idle.*
+
+![Kubernetes: pod, service, autoscaler and deployment on AKS](docs/img/k8s_status.png)
+
+*Azure Kubernetes Service: the pod is `1/1 Running` with 0 restarts after 42 hours, behind a ClusterIP service, with the autoscaler (1 to 3 pods) and the image pulled from the private registry.*
+
+![GitHub Actions: the five-stage pipeline, all jobs passing](docs/img/ci.png)
+
+*GitHub Actions on `main`: all five stages pass (quality and security in parallel, then tests, build and verify, publish) in 7 minutes 40 seconds.*
 
 
 https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
@@ -120,21 +133,21 @@ https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 - **Quality gates in CI.** Lint with a pinned rule set, static security analysis, secret scanning, manifest and Dockerfile validation, and a Trivy image scan.
 - **Reproducible.** A ready-to-run state is committed in [`artifacts/`](artifacts/); `scripts/fetch_data.py` rebuilds everything from the NYC source.
 
-<details>
-<summary>Tools used and why</summary>
+**Tools used**
 
-| Area | Tools | Why |
-|---|---|---|
-| Data | pandas, pyarrow, Socrata API | Cleaning, parquet state, reproducible download |
-| Retrieval | sentence-transformers (bge-small), FAISS | Local embeddings, exact vector search |
-| LLM | OpenAI structured outputs, Pydantic | Schema-constrained parsing and generation |
-| Service | FastAPI, Prometheus client, vanilla JS + CSS | Stateless API, metrics, no-build UI with a strict CSP |
-| Quality | pytest, ruff, bandit, gitleaks | Tests, lint, security |
-| Packaging and deploy | Docker, Compose, Kubernetes, AKS, ACR | Container, orchestration, cloud |
-| CI/CD | GitHub Actions, Trivy, hadolint, kubeconform, Dependabot | Build, scan and publish pipeline |
-| Analysis | Jupyter, nbconvert, Mermaid | EDA, ingestion check, diagrams |
-
-</details>
+| Tool | What it does here |
+|---|---|
+| pandas, pyarrow | Clean and group the 94,674 tickets into patterns; the pattern table, resolutions and tickets are stored as parquet. |
+| Socrata API (NYC OpenData) | `scripts/fetch_data.py` downloads closed 311 tickets from the official source, so the corpus is reproducible. |
+| sentence-transformers (bge-small-en-v1.5) | Embeds complaints and ticket-pattern text locally on CPU, with no per-call cost. |
+| FAISS | Exact vector search behind a `VectorStore` interface; supports upsert and remove, which is how new ticket classes are added without a rebuild. |
+| OpenAI API (gpt-4o-mini, gpt-4.1-mini) | gpt-4o-mini parses the complaint and drafts the cited steps with schema-enforced JSON; a different model, gpt-4.1-mini, judges faithfulness in the evals. |
+| FastAPI, Uvicorn | The stateless service: `/ask`, `/ingest`, `/ready`, `/metrics`, with the UI served from the same container. |
+| Prometheus client | Exposes `/metrics`: abstain rate, tier mix, latency per stage, tokens and the similarity distribution. |
+| pytest, pytest-cov | 48 tests at 84% coverage, using a stub LLM and a fake embedder so they need no key or downloads. |
+| Docker, Docker Compose | Packages the service (CPU-only torch, model baked in, non-root) and runs it locally with one command. |
+| Kubernetes on AKS, Azure Container Registry | Runs the container with probes, resource limits and an autoscaler, pulling from a private registry. |
+| GitHub Actions | The five-stage CI/CD pipeline: quality, security, test, build and verify, publish. |
 
 [Details: code structure, tests and quality gates](docs/rubric/04_code.md)
 
@@ -151,7 +164,7 @@ https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 
 ---
 
-## Limitations (stated up front)
+## Limitations 
 
 - City-services corpus, not telecom; telecom is shown with a synthetic class only.
 - No separate knowledge base: the agencies' standard resolution texts play that role.
