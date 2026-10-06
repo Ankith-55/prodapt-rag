@@ -1,5 +1,9 @@
 
 
+
+
+
+
 # Support Ticket Resolution Assistant
 
 
@@ -86,6 +90,9 @@ flowchart LR
 
 > **Screenshot placeholder 3 (pipeline):** the GitHub Actions run with all five stages green. Save as `docs/img/ci.png`.
 > **Screenshot placeholder 4 (Kubernetes):** `kubectl get pods,svc,hpa,deploy` showing `1/1 Running` and the autoscaler. Save as `docs/img/aks.png`.
+
+
+https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 
 [Details: production scale, topology, cost model, alerts](docs/rubric/02_solution_and_scale.md)
 
