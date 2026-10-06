@@ -1,9 +1,5 @@
 
 
-
-
-
-
 # Support Ticket Resolution Assistant
 
 
@@ -22,7 +18,7 @@ retrieval system ([`EDA/`](EDA/)). We used the official NYC 311 export, the same
 evolution demo asks a telecom complaint, abstains, ingests a (clearly synthetic) *Broadband Service* class in seconds, and then
 answers it with cited telecom resolutions.
 
-*Why real data and not a synthetic corpus?* This was a deliberate choice. LLM-generated datasets are cleaner and less noisy than
+> *Why real data and not a synthetic corpus?* This was a deliberate choice. LLM-generated datasets are cleaner and less noisy than
 real ones: their classes are neatly separated, so even a simple ML classifier can usually tell them apart, and that would not test
 retrieval at all. Real tickets carry the natural noise that makes retrieval genuinely hard (91% of ticket volume has mixed outcomes,
 and sibling categories overlap). The ticket history and resolutions here are real. 
@@ -123,7 +119,7 @@ https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 | **Abstain** (similarity gate plus LLM "none") | Always answer | A threshold of 0.74 keeps 97.6% of valid queries and rejects 76% of off-topic ones (A4) | Two gates |
 | **Route by history** (template vs full RAG) | RAG for everything | Real later tickets: `fast_lookup` realised 93.5% vs 96.4% predicted | Tiered |
 
-> **Screenshot placeholder 5 (ablations):** the ablation table or a bar chart of the retrieval results. Save as `docs/img/ablations.png`.
+
 
 [Details: all nine ablations with setup, numbers and reasoning](docs/ablations.md) · [Rubric summary](docs/rubric/03_design_decisions.md)
 
@@ -159,7 +155,9 @@ https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 - **Checkpoints you can roll back to.** Index metadata, a per-batch ingestion audit log, committed eval reports, resumable jobs, and an immutable versioned state image with one-command rollback.
 - **Monitoring built in.** `/metrics` exposes abstain rate, tier mix, latency per stage, tokens and the similarity distribution (the drift signal), with written alert rules; logs carry a request ID and never the complaint text.
 
-> **Screenshot placeholder 6 (evals):** the real-ticket backtest result or the `/metrics` page. Save as `docs/img/evals.png`.
+![The /metrics endpoint after five requests: answered and abstained counts, tier mix, latency per stage, tokens and index size](docs/img/evals.png)
+
+*The Prometheus `/metrics` endpoint after five requests: 4 answered and 1 abstained, the tier mix, per-stage latency totals, token counts, and the index size (1,266 patterns, 6,330 vectors).*
 
 [Details: evals, backtest, checkpoints and alert rules](docs/rubric/05_evals_and_monitoring.md) · [Evolving-data study](docs/evolving_data.md)
 
