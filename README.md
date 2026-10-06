@@ -22,10 +22,10 @@ retrieval system ([`EDA/`](EDA/)). We used the official NYC 311 export, the same
 evolution demo asks a telecom complaint, abstains, ingests a (clearly synthetic) *Broadband Service* class in seconds, and then
 answers it with cited telecom resolutions.
 
-*Why real data and not a synthetic corpus?* On purpose. Synthetic tickets are easy for a model to separate; real tickets carry
-the natural noise that makes retrieval hard (91% of ticket volume has mixed outcomes, and sibling categories overlap). The ticket
-history and resolutions here are real. The only synthetic text is **customer-style complaints**, used as a proxy because the corpus
-has no customer prose, and checked against 33,773 real later tickets (see *Checkpoints, evals and monitoring*).
+*Why real data and not a synthetic corpus?* This was a deliberate choice. LLM-generated datasets are cleaner and less noisy than
+real ones: their classes are neatly separated, so even a simple ML classifier can usually tell them apart, and that would not test
+retrieval at all. Real tickets carry the natural noise that makes retrieval genuinely hard (91% of ticket volume has mixed outcomes,
+and sibling categories overlap). The ticket history and resolutions here are real. 
 
 ## Live demo
 https://github.com/user-attachments/assets/bb1e64f7-66a0-4f0b-a10f-5a53260f6439
@@ -104,8 +104,9 @@ flowchart LR
 
 *GitHub Actions on `main`: all five stages pass (quality and security in parallel, then tests, build and verify, publish) in 7 minutes 40 seconds.*
 
-
 https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
+
+*Video (7 seconds): the `aks-ticketrag` cluster running on Azure Kubernetes Service.*
 
 [Details: production scale, topology, cost model, alerts](docs/rubric/02_solution_and_scale.md)
 

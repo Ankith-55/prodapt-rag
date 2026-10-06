@@ -16,7 +16,7 @@ The question this project answers: *can semantic retrieval of past resolved tick
 | Data quality issues | 3.2% double-encoded text; about 3% of resolutions cut off at 500 characters in the source | Repaired or flagged in the answer |
 
 ## Why real data, and what is synthetic
-The ticket history and resolutions are real. Synthetic tickets are easy for a model to separate, while real ones carry natural noise: mixed outcomes and overlapping sibling categories. The only synthetic text is customer-style complaints, because the corpus has category labels but no customer prose. They are used as a proxy for queries and checked against real later tickets (the temporal backtest).
+Choosing real data was deliberate. The ticket history and resolutions are real. LLM-generated data is cleaner and less noisy, with neatly separated classes that even a simple ML classifier can usually tell apart, so it would not test retrieval; real tickets carry natural noise: mixed outcomes and overlapping sibling categories. The only synthetic text is customer-style complaints, because the corpus has category labels but no customer prose. They are used as a proxy for queries and checked against real later tickets (the temporal backtest).
 
 ## Why this is not a telecom corpus
 The problem statement frames a telecom desk. The provided data was NYC 311 as well, so we extended it with the same source. The engine does not depend on the domain; the evolution demo onboards a synthetic telecom class to show that.
