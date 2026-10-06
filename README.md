@@ -29,29 +29,69 @@ https://github.com/user-attachments/assets/bb1e64f7-66a0-4f0b-a10f-5a53260f6439
 ## Architecture
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'IBM Plex Sans, Segoe UI, Arial, sans-serif', 'fontSize': '21px', 'lineColor': '#0b2440'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 55, 'rankSpacing': 70, 'padding': 20}}}%%
 flowchart LR
-  Q["Raw complaint"]:::input --> R["1 Retrieve<br/>bge-small + FAISS<br/>top-5 ticket types"]:::retrieval
-  R --> G{"2 Similarity gate<br/>cosine at least 0.74"}:::guard
-  G -- "no" --> A["Abstain<br/>route to a human<br/>show nearest types"]:::guard
-  G -- "yes" --> P["3 Parse - LLM<br/>pick a type or none<br/>severity, sentiment"]:::llm
-  P -- "none fits" --> A
-  P --> T{"4 Route by history"}:::guard
-  T -- "consistent outcome" --> TPL["Template answer<br/>no LLM call"]:::output
-  T -- "mixed outcomes" --> GEN["5 Generate - LLM<br/>numbered sources + citations"]:::llm
-  GEN --> V["6 Validate<br/>citations, numbers,<br/>no predictions, retry once"]:::guard
-  V --> OUT["7 Answer<br/>outcome shares from the table<br/>+ cited sources"]:::output
-  TPL --> OUT
-  DATA[("Ticket history<br/>patterns, resolutions,<br/>FAISS index")]:::store -.-> R
-  ING["Ingest new tickets<br/>new classes searchable<br/>without a rebuild"]:::store -.-> DATA
-  classDef input fill:#f4f2ec,stroke:#586172,color:#1b2330;
-  classDef retrieval fill:#e7edf5,stroke:#12355b,color:#12355b,stroke-width:2px;
-  classDef llm fill:#efe9f7,stroke:#5b3f8c,color:#3a2766;
-  classDef guard fill:#fbf3da,stroke:#c9a227,color:#5a4300;
-  classDef output fill:#e3f1e5,stroke:#2f6b3a,color:#1f4a28;
-  classDef store fill:#e6e9ee,stroke:#586172,color:#1b2330;
+  subgraph IN["INPUT"]
+    Q["Raw customer<br/>complaint"]
+  end
+
+  subgraph RET["RETRIEVE"]
+    R["1 · Retrieve<br/>bge-small + FAISS<br/>top-5 ticket types"]
+    G{"2 · Similarity gate<br/>cosine ≥ 0.74"}
+  end
+
+  subgraph UND["UNDERSTAND"]
+    P["3 · Parse (LLM)<br/>pick a type or none<br/>severity · sentiment"]
+    T{"4 · Route by<br/>ticket history"}
+  end
+
+  subgraph ANS["ANSWER"]
+    TPL["Template answer<br/>no LLM call"]
+    GEN["5 · Generate (LLM)<br/>numbered sources<br/>+ citations"]
+    V["6 · Validate<br/>citations · numbers<br/>no predictions · retry once"]
+    OUT["7 · Final answer<br/>outcome shares from the table<br/>+ cited sources"]
+  end
+
+  ABS["ABSTAIN<br/>route to a human<br/>show nearest types"]
+  DATA[("Ticket history<br/>patterns · resolutions<br/>FAISS index")]
+  ING["Ingest new tickets<br/>new classes searchable<br/>without a rebuild"]
+
+  Q --> R --> G
+  G -- "no" --> ABS
+  G -- "yes" --> P
+  P -- "none fits" --> ABS
+  P --> T
+  T -- "consistent outcome" --> TPL --> OUT
+  T -- "mixed outcomes" --> GEN --> V --> OUT
+  DATA -.-> R
+  ING -.-> DATA
+
+  classDef input fill:#f4f2ec,stroke:#1b2330,stroke-width:3px,color:#1b2330,font-weight:bold;
+  classDef retrieval fill:#dbe7f5,stroke:#0b2440,stroke-width:3px,color:#0b2440,font-weight:bold;
+  classDef llm fill:#e6dcf5,stroke:#2e1a5c,stroke-width:3px,color:#2e1a5c,font-weight:bold;
+  classDef guard fill:#fbe9b0,stroke:#5a4300,stroke-width:3px,color:#3d2e00,font-weight:bold;
+  classDef output fill:#cfe9d3,stroke:#1b4d26,stroke-width:3px,color:#12331a,font-weight:bold;
+  classDef store fill:#dfe3e9,stroke:#2b3340,stroke-width:3px,color:#1b2330,font-weight:bold;
+  classDef stop fill:#f8d7d2,stroke:#7a1f12,stroke-width:3px,color:#5a140a,font-weight:bold;
+
+  class Q input;
+  class R retrieval;
+  class G,T guard;
+  class P,GEN llm;
+  class V guard;
+  class TPL,OUT output;
+  class DATA,ING store;
+  class ABS stop;
+
+  style IN fill:#ffffff,stroke:#1b2330,stroke-width:4px,color:#1b2330
+  style RET fill:#f3f7fc,stroke:#0b2440,stroke-width:4px,color:#0b2440
+  style UND fill:#f8f4fd,stroke:#2e1a5c,stroke-width:4px,color:#2e1a5c
+  style ANS fill:#f2faf3,stroke:#1b4d26,stroke-width:4px,color:#12331a
+
+  linkStyle default stroke:#0b2440,stroke-width:3px
 ```
 
-<sub>Blue: retrieval. Purple: LLM calls. Amber: guardrails and routing. Green: outputs. Grey: data. More diagrams (request sequence, ingestion, deployment): [`docs/architecture.md`](docs/architecture.md).</sub>
+<sub>Blue: retrieval. Purple: LLM calls. Amber: guardrails and routing. Green: outputs. Grey: data. Red: abstain. More diagrams (request sequence, ingestion, deployment): [`docs/architecture.md`](docs/architecture.md).</sub>
 
 **Results at a glance**
 
@@ -176,7 +216,8 @@ https://github.com/user-attachments/assets/3c278a71-a0d1-4361-8449-5220dff6e81a
 A ready-to-run state is committed, so nothing has to be built. You need an OpenAI key only to answer.
 
 ```bash
-echo OPENAI_API_KEY=sk-... > .env
+cp .env.example .env          # Windows PowerShell: copy .env.example .env
+# open .env and replace sk-REPLACE-ME with your OpenAI key
 docker compose up --build
 ```
 
