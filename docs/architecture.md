@@ -2,6 +2,73 @@
 
 Diagrams are Mermaid (rendered natively by GitHub and VS Code). Numbers come from the evals in `docs/ablations.md`.
 
+## 0. The README figure (editable source)
+
+The README shows this diagram as `docs/img/architecture.png`, exported from <https://mermaid.live> so it looks identical everywhere. To change it, edit the code below, re-export a PNG (Actions, PNG, larger scale), and replace the file.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Arial, Helvetica, sans-serif', 'fontSize': '20px', 'lineColor': '#0b2440'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 55, 'rankSpacing': 75, 'padding': 24, 'htmlLabels': true}}}%%
+flowchart LR
+  subgraph IN["&nbsp;&nbsp;INPUT&nbsp;&nbsp;"]
+    Q["<b>Raw customer<br/>complaint</b>"]
+  end
+
+  subgraph RET["&nbsp;&nbsp;RETRIEVE&nbsp;&nbsp;"]
+    R["<b>1 · Retrieve</b><br/>bge-small + FAISS<br/>top-5 ticket types"]
+    G{{"<b>2 · Similarity gate</b><br/>cosine ≥ 0.74"}}
+  end
+
+  subgraph UND["&nbsp;&nbsp;UNDERSTAND&nbsp;&nbsp;"]
+    P["<b>3 · Parse (LLM)</b><br/>pick a type or none<br/>severity · sentiment"]
+    T{{"<b>4 · Route</b><br/>by ticket history"}}
+  end
+
+  subgraph ANS["&nbsp;&nbsp;ANSWER&nbsp;&nbsp;"]
+    TPL["<b>Template answer</b><br/>no LLM call"]
+    GEN["<b>5 · Generate (LLM)</b><br/>numbered sources<br/>+ citations"]
+    V["<b>6 · Validate</b><br/>citations · numbers<br/>no predictions · retry once"]
+    OUT["<b>7 · Final answer</b><br/>outcome shares from the table<br/>+ cited sources"]
+  end
+
+  ABS["<b>ABSTAIN</b><br/>route to a human<br/>show nearest types"]
+  DATA[("<b>Ticket history</b><br/>patterns · resolutions<br/>FAISS index")]
+  ING["<b>Ingest new tickets</b><br/>new classes searchable<br/>without a rebuild"]
+
+  Q --> R --> G
+  G -- "no" --> ABS
+  G -- "yes" --> P
+  P -- "none fits" --> ABS
+  P --> T
+  T -- "consistent outcome" --> TPL --> OUT
+  T -- "mixed outcomes" --> GEN --> V --> OUT
+  DATA -.-> R
+  ING -.-> DATA
+
+  classDef input fill:#f4f2ec,stroke:#1b2330,stroke-width:3px,color:#1b2330;
+  classDef retrieval fill:#dbe7f5,stroke:#0b2440,stroke-width:3px,color:#0b2440;
+  classDef llm fill:#e6dcf5,stroke:#2e1a5c,stroke-width:3px,color:#2e1a5c;
+  classDef guard fill:#fbe9b0,stroke:#5a4300,stroke-width:3px,color:#3d2e00;
+  classDef output fill:#cfe9d3,stroke:#1b4d26,stroke-width:3px,color:#12331a;
+  classDef store fill:#dfe3e9,stroke:#2b3340,stroke-width:3px,color:#1b2330;
+  classDef stop fill:#f8d7d2,stroke:#7a1f12,stroke-width:3px,color:#5a140a;
+
+  class Q input;
+  class R retrieval;
+  class G,T guard;
+  class P,GEN llm;
+  class V guard;
+  class TPL,OUT output;
+  class DATA,ING store;
+  class ABS stop;
+
+  style IN fill:#ffffff,stroke:#1b2330,stroke-width:4px,color:#1b2330
+  style RET fill:#f3f7fc,stroke:#0b2440,stroke-width:4px,color:#0b2440
+  style UND fill:#f8f4fd,stroke:#2e1a5c,stroke-width:4px,color:#2e1a5c
+  style ANS fill:#f2faf3,stroke:#1b4d26,stroke-width:4px,color:#12331a
+
+  linkStyle default stroke:#0b2440,stroke-width:3px
+```
+
 ## 1. System overview
 
 ```mermaid
