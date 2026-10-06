@@ -1,6 +1,7 @@
+
+
 # Support Ticket Resolution Assistant
 
-![ci](https://github.com/Ankith-56/prodapt-rag/actions/workflows/ci.yml/badge.svg)
 
 A semantic resolution assistant for a support desk. An agent pastes a raw customer complaint and gets back:
 
@@ -23,7 +24,7 @@ history and resolutions here are real. The only synthetic text is **customer-sty
 has no customer prose, and checked against 33,773 real later tickets (see *Checkpoints, evals and monitoring*).
 
 ## Live demo
-
+https://github.com/user-attachments/assets/bb1e64f7-66a0-4f0b-a10f-5a53260f6439
 > **VIDEO_LINK:** `[Watch the demo (about 90 seconds)](PASTE_LINK_HERE)`
 
 > **Screenshot placeholder 1 (hero GIF, under 5 MB):** paste the heating complaint, the triage strip and cited steps appear, click a citation chip and its source highlights. Save as `docs/img/hero.gif`.
