@@ -1,6 +1,6 @@
 # Support-ticket resolution assistant: one stateless container serving the API and the UI.
 # State (patterns, resolutions, FAISS index) is NOT baked in: mount it at /data/state (or set TICKETRAG_STATE).
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
